@@ -1,5 +1,5 @@
 [package]
-name = "ni-daqmx"
+name = "daqmx"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 nidaqmx-sys = {git = "https://github.com/amiraeva/nidaqmx-sys.git"}
+thiserror = "1"
+log = "0.4"

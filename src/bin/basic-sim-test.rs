@@ -1,6 +1,6 @@
 /// Quick Test Program To Get A Value From A Channel
 
-use ni_daqmx;
+use daqmx;
 fn main() {
-    println!("{:?}", ni_daqmx::get_value());
+    println!("{:?}", daqmx::get_value());
 }

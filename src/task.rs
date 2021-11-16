@@ -1,7 +1,9 @@
 /// Provides a wrapper and functions for the DAQmx Task
-use std::ffi::CString;
+use std::{alloc::handle_alloc_error, ffi::CString};
 use std::ptr;
-use nidaqmx_sys::{TaskHandle};
+use nidaqmx_sys::{DAQmxGetTaskName, TaskHandle};
+use crate::error::{Result, handle_error};
+use crate::types::{buffer_to_string};
 
 
 pub struct Task {
@@ -9,27 +11,78 @@ pub struct Task {
 }
 
 impl Task {
-    pub fn new(name: &str) -> Self {
 
-        
+    /// Creates a new task with the given name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - A name for the task. If empty then DAQmx will assign one automatically.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use daqmx::Task;
+    /// 
+    /// let task = Task::new("My Task");
+    /// ```
+    /// ```
+    /// use daqmx::Task;
+    /// 
+    /// let task = Task::new("");
+    /// ```
+    pub fn new(name: &str) -> Result<Self> {
 
-        let c_name = CString::new(name).expect("Can't Make C String Name");
+
+        let c_name = CString::new(name)?;
+
         let handle = unsafe {
             let mut tmp_handle: nidaqmx_sys::TaskHandle = ptr::null_mut();
             let error_code = nidaqmx_sys::DAQmxCreateTask(c_name.as_ptr(), &mut tmp_handle);
+            handle_error(error_code)?;
             tmp_handle
-
         };
 
-
-        Self {
+        Ok(Self {
             handle
-        }
+        })
+
+        
 
     }
 
-    pub fn add_channel(&mut self, channel: Box<dyn TaskChannel>) {
-        channel.add_to_task(self.task_handle());
+    /// Gets the name assigned to the task in DAQmx.
+    ///
+    /// Useful if no name is specified.
+    ///
+    /// # Example
+    /// ```
+    /// use daqmx::Task;
+    ///
+    /// let mut task = Task::new("").unwrap();
+    /// let name = task.name().unwrap();
+    ///
+    /// // Returns Non-Empty Name
+    /// assert_ne!(&name, "");
+    /// ```
+    pub fn name(&mut self) -> Result<String> {
+
+        //first call to get size.
+        let return_code = unsafe { DAQmxGetTaskName(self.task_handle(), std::ptr::null_mut(), 0)};
+        if return_code < 0 {
+            handle_error(return_code)?;
+        }
+        
+        let buffer_size = return_code as u32;
+        let mut buffer: Vec<i8> = vec![0i8; buffer_size as usize];
+        let return_code = unsafe { DAQmxGetTaskName(self.task_handle(), buffer.as_mut_ptr(), buffer_size)};
+        handle_error(return_code)?;
+
+
+        Ok(buffer_to_string(buffer))
+    }
+
+    pub fn add_channel(&mut self, channel: Box<dyn TaskChannel>) -> Result<()> {
+        channel.add_to_task(self.task_handle())
     }
 
     pub fn read(&mut self) -> f64 {
@@ -46,42 +99,6 @@ impl Task {
     }
 }
 
-pub fn handle_error(return_code: i32) {
-
-    // This structure is based on how they handle this in Python.
-    match return_code {
-        0 => {}//do nothing.
-        i32::MIN..=-1 => {
-            //use extended info for errors.
-            unsafe {
-                let mut buffer = vec![0i8; 2048];
-                nidaqmx_sys::DAQmxGetExtendedErrorInfo(buffer.as_mut_ptr(), 2048);
-                let message = error_buffer_to_string(buffer);
-                println!("DAQmx Error: {:}", message);
-            }
-        }
-        1..=i32::MAX => {
-            //use error string for warning.
-            unsafe {
-                let mut buffer = vec![0i8; 2048];
-                nidaqmx_sys::DAQmxGetErrorString(return_code, buffer.as_mut_ptr(), 2048);
-                let message = error_buffer_to_string(buffer);
-                println!("DAQmx Warning: {:}", message);
-            }
-        }
-    }
-}
-
-fn error_buffer_to_string(buffer: Vec<i8>) -> String {
-
-    // First get just valid chars as u8
-    let buffer_u8 = buffer.into_iter().take_while(|&e| e != 0 ).map(|e| e as u8).collect();
-
-    // Build from utf8 - I think it may be ascii but should still be compliant as utf8.
-    // In the Python API this is treated as UTF8 as well.
-    String::from_utf8(buffer_u8).expect("Invalid Characters in Error Buffer")
-
-}
 
 impl Drop for Task {
     fn drop(&mut self) {
@@ -91,28 +108,8 @@ impl Drop for Task {
 
 pub trait TaskChannel {
 
-    fn add_to_task(&self, handle: TaskHandle);
+    fn add_to_task(&self, handle: TaskHandle) -> Result<()>;
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::task::error_buffer_to_string;
-
-
-    #[test]
-    fn test_error_buffer_to_string_good() {
-        let buffer: Vec<i8> =  vec![68, 101, 118, 105, 99, 101, 32, 105, 100, 101, 110, 0, 0, 0];
-        let string = error_buffer_to_string(buffer);
-        assert_eq!(&string, "Device iden");
-    }
-
-    #[test]
-    fn test_error_buffer_to_string_no_null() {
-        let buffer: Vec<i8> =  vec![68, 101, 118, 105, 99, 101, 32, 105, 100, 101, 110];
-        let string = error_buffer_to_string(buffer);
-        assert_eq!(&string, "Device iden");
-    }
-
-}
 
 
