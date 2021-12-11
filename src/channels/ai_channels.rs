@@ -1,6 +1,6 @@
 use std::ffi::CString;
 
-use crate::task::{TaskChannel};
+use crate::tasks::{AnalogInputTaskChannel};
 use crate::error::{ Result, handle_error };
 
 use nidaqmx_sys;
@@ -9,7 +9,7 @@ use nidaqmx_sys::{TaskHandle};
 
 pub struct VoltageInputChannel {}
 
-impl TaskChannel for VoltageInputChannel {
+impl AnalogInputTaskChannel for VoltageInputChannel {
 
     fn add_to_task(&self, handle: TaskHandle) -> Result<()> {
         let c_channel = CString::new("PXI1Slot2/ai0").expect("Cant Create C String");

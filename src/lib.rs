@@ -1,15 +1,15 @@
-mod task;
-mod ai_channels;
+mod tasks;
+mod channels;
 mod types;
 pub mod error;
 
-use ai_channels::*;
+use channels::*;
 
-pub use task::Task;
+pub use tasks::{Task, AnalogInputTask, InputTask};
 
 pub fn get_value() -> f64 {
 
-    let mut task = task::Task::new("test task").unwrap();
+    let mut task = AnalogInputTask::new("test task").unwrap();
     println!("Task Name: {}", task.name().unwrap());
     task.add_channel(Box::new(VoltageInputChannel {})).unwrap();
     //return a value
