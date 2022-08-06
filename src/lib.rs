@@ -1,19 +1,15 @@
-mod tasks;
 mod channels;
-mod types;
 pub mod error;
+mod tasks;
+mod types;
 
-use channels::*;
-
-pub use tasks::{Task, AnalogInputTask, InputTask};
+pub use tasks::Task;
 
 pub fn get_value() -> f64 {
-
-    let mut task = AnalogInputTask::new("test task").unwrap();
+    let mut task = Task::new("test task").unwrap();
     println!("Task Name: {}", task.name().unwrap());
-    task.add_channel(Box::new(VoltageInputChannel {})).unwrap();
+    task.create_voltage_channel("PXI1Slot2/ai0").unwrap();
     //return a value
 
-    return task.read();
+    return task.read_scalar(std::time::Duration::from_secs(1)).unwrap();
 }
-
