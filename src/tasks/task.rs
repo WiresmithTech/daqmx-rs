@@ -1,4 +1,4 @@
-use crate::channels::AnalogInputChannel;
+use crate::channels::{AnalogInputChannel, ChannelBuilder};
 use crate::daqmx_call;
 use crate::error::{handle_error, Result};
 use crate::types::buffer_to_string;
@@ -93,7 +93,11 @@ impl<TYPE> Drop for Task<TYPE> {
 }
 
 impl Task<AnalogInput> {
-    pub fn create_voltage_channel(&mut self, physical_channel: &str) -> Result<()> {
+    pub fn create_voltage_channel(
+        &mut self,
+        physical_channel: &str,
+        name: Option<&str>,
+    ) -> Result<()> {
         let c_channel = CString::new(physical_channel)?;
         let c_name = CString::new("").unwrap();
         let c_scale = CString::new("").unwrap();
@@ -108,6 +112,10 @@ impl Task<AnalogInput> {
             ni_daqmx_sys::DAQmx_Val_Volts as i32,
             c_scale.as_ptr(),
         ))
+    }
+
+    pub fn create_channel<B: ChannelBuilder>(&mut self, builder: B) -> Result<()> {
+        builder.add_to_task(self.handle)
     }
 
     pub fn get_channel<'a, C: AnalogInputChannel<'a>>(&'a mut self, name: &'a str) -> Result<C> {
