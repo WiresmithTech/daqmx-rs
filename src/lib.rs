@@ -12,8 +12,8 @@ pub fn get_value() -> f64 {
     let mut task = Task::new("test task").unwrap();
     println!("Task Name: {}", task.name().unwrap());
 
-    let ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai0", -10.0, 10.0).unwrap();
-    let ch2 = VoltageChannelBuilder::new("PXI1SLot2/ai1", -10.0, 10.0).unwrap();
+    let ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai0").unwrap();
+    let ch2 = VoltageChannelBuilder::new("PXI1Slot2/ai1").unwrap();
     task.create_channel(ch1).unwrap();
     task.create_channel(ch2).unwrap();
     let channel2: AnalogInputChannelBase = task.get_channel("PXI1Slot2/ai1").unwrap();

@@ -93,16 +93,12 @@ pub struct VoltageChannelBuilder {
 }
 
 impl VoltageChannelBuilder {
-    pub fn new<S: Into<Vec<u8>>>(
-        physical_channel: S,
-        range_min: f64,
-        range_max: f64,
-    ) -> Result<Self> {
+    pub fn new<S: Into<Vec<u8>>>(physical_channel: S) -> Result<Self> {
         Ok(Self {
             physical_channel: CString::new(physical_channel)?,
             name: None,
-            max: range_max,
-            min: range_min,
+            max: 5.0,
+            min: -5.0,
             scale: VoltageScale::Volts,
             terminal_config: AnalogTerminalConfig::Default,
         })
