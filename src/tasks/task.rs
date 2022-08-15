@@ -1,12 +1,14 @@
+use crate::channels::AnalogInputChannel;
+use crate::daqmx_call;
 use crate::error::{handle_error, Result};
 use crate::types::buffer_to_string;
-use nidaqmx_sys::DAQmxGetTaskName;
+use ni_daqmx_sys::DAQmxGetTaskName;
 /// Provides a wrapper and functions for the DAQmx Task
 use std::ffi::CString;
 use std::marker::PhantomData;
 use std::ptr;
 
-pub type TaskHandle = nidaqmx_sys::TaskHandle;
+pub type TaskHandle = ni_daqmx_sys::TaskHandle;
 
 /// The task state represents the DAQmx Task State Machine.
 ///
@@ -36,10 +38,12 @@ impl<TYPE> Task<TYPE> {
     pub fn new(name: &str) -> Result<Self> {
         let c_name = CString::new(name)?;
 
-        let handle = unsafe {
-            let mut tmp_handle: nidaqmx_sys::TaskHandle = ptr::null_mut();
-            let error_code = nidaqmx_sys::DAQmxCreateTask(c_name.as_ptr(), &mut tmp_handle);
-            handle_error(error_code)?;
+        let handle = {
+            let mut tmp_handle: ni_daqmx_sys::TaskHandle = ptr::null_mut();
+            daqmx_call!(ni_daqmx_sys::DAQmxCreateTask(
+                c_name.as_ptr(),
+                &mut tmp_handle
+            ))?;
             tmp_handle
         };
 
@@ -72,9 +76,11 @@ impl<TYPE> Task<TYPE> {
 
         let buffer_size = return_code as u32;
         let mut buffer: Vec<i8> = vec![0i8; buffer_size as usize];
-        let return_code =
-            unsafe { DAQmxGetTaskName(self.handle(), buffer.as_mut_ptr(), buffer_size) };
-        handle_error(return_code)?;
+        daqmx_call!(DAQmxGetTaskName(
+            self.handle(),
+            buffer.as_mut_ptr(),
+            buffer_size
+        ))?;
 
         Ok(buffer_to_string(buffer))
     }
@@ -82,33 +88,41 @@ impl<TYPE> Task<TYPE> {
 
 impl<TYPE> Drop for Task<TYPE> {
     fn drop(&mut self) {
-        unsafe { nidaqmx_sys::DAQmxClearTask(self.handle()) };
+        unsafe { ni_daqmx_sys::DAQmxClearTask(self.handle()) };
     }
 }
 
 impl Task<AnalogInput> {
     pub fn create_voltage_channel(&mut self, physical_channel: &str) -> Result<()> {
         let c_channel = CString::new(physical_channel)?;
+        let c_name = CString::new("").unwrap();
+        let c_scale = CString::new("").unwrap();
 
-        let error_code = unsafe {
-            nidaqmx_sys::DAQmxCreateAIVoltageChan(
-                self.handle,
-                c_channel.as_ptr(),
-                CString::new("").unwrap().as_ptr(),
-                nidaqmx_sys::DAQmx_Val_Cfg_Default,
-                -10.0,
-                10.0,
-                nidaqmx_sys::DAQmx_Val_Volts as i32,
-                CString::new("").unwrap().as_ptr(),
-            )
-        };
-        handle_error(error_code)
+        daqmx_call!(ni_daqmx_sys::DAQmxCreateAIVoltageChan(
+            self.handle,
+            c_channel.as_ptr(),
+            c_name.as_ptr(),
+            ni_daqmx_sys::DAQmx_Val_Cfg_Default,
+            -10.0,
+            10.0,
+            ni_daqmx_sys::DAQmx_Val_Volts as i32,
+            c_scale.as_ptr(),
+        ))
+    }
+
+    pub fn configure_channel<'a, C: AnalogInputChannel<'a>>(
+        &'a mut self,
+        name: &'a str,
+        configuration_function: fn(C) -> Result<()>,
+    ) -> Result<()> {
+        let channel = C::new(&mut self.handle, name)?;
+        configuration_function(channel)
     }
 
     pub fn read_scalar(&mut self, timeout: std::time::Duration) -> Result<f64> {
         let mut value = 0.0;
         let error_code = unsafe {
-            nidaqmx_sys::DAQmxReadAnalogScalarF64(
+            ni_daqmx_sys::DAQmxReadAnalogScalarF64(
                 self.handle,
                 timeout.as_secs_f64(),
                 &mut value,
