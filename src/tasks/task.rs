@@ -110,12 +110,16 @@ impl Task<AnalogInput> {
         ))
     }
 
+    pub fn get_channel<'a, C: AnalogInputChannel<'a>>(&'a mut self, name: &'a str) -> Result<C> {
+        C::new(&mut self.handle, name)
+    }
+
     pub fn configure_channel<'a, C: AnalogInputChannel<'a>>(
         &'a mut self,
         name: &'a str,
         configuration_function: fn(C) -> Result<()>,
     ) -> Result<()> {
-        let channel = C::new(&mut self.handle, name)?;
+        let channel = self.get_channel(name)?;
         configuration_function(channel)
     }
 

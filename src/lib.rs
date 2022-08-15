@@ -11,11 +11,9 @@ pub fn get_value() -> f64 {
     let mut task = Task::new("test task").unwrap();
     println!("Task Name: {}", task.name().unwrap());
     task.create_voltage_channel("PXI1Slot2/ai0").unwrap();
-    task.configure_channel("PXI1Slot2/ai0", |channel: AnalogInputChannelBase| {
-        println!("AI Max: {}", channel.ai_max().unwrap());
-        Ok(())
-    })
-    .unwrap();
+    task.create_voltage_channel("PXI1Slot2/ai1").unwrap();
+    let channel2: AnalogInputChannelBase = task.get_channel("PXI1Slot2/ai1").unwrap();
+    println!("AI Max 2: {}", channel2.ai_max().unwrap());
     //return a value
 
     return task.read_scalar(std::time::Duration::from_secs(1)).unwrap();
