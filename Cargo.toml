@@ -10,3 +10,4 @@ ni-daqmx-sys = {path = "../ni-daqmx-sys", version = "20.7"}
 thiserror = "1"
 # Log is used to provide details of DAQmx warnings that aren't otherwise exposed
 log = "0.4"
+delegate = "0.7"

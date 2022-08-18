@@ -7,6 +7,7 @@ pub use tasks::Task;
 
 use crate::channels::AnalogInputChannelBase;
 use crate::channels::VoltageChannelBuilder;
+use crate::channels::VoltageInputChannel;
 
 pub fn get_value() -> f64 {
     let mut task = Task::new("test task").unwrap();
@@ -16,7 +17,7 @@ pub fn get_value() -> f64 {
     let ch2 = VoltageChannelBuilder::new("PXI1Slot2/ai1").unwrap();
     task.create_channel(ch1).unwrap();
     task.create_channel(ch2).unwrap();
-    let channel2: AnalogInputChannelBase = task.get_channel("PXI1Slot2/ai1").unwrap();
+    let channel2: VoltageInputChannel = task.get_channel("PXI1Slot2/ai1").unwrap();
     println!("AI Max 2: {}", channel2.ai_max().unwrap());
     //return a value
 

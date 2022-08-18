@@ -1,3 +1,4 @@
+use delegate::delegate;
 use std::ffi::CString;
 
 use ni_daqmx_sys::*;
@@ -5,6 +6,16 @@ use ni_daqmx_sys::*;
 use crate::error::{handle_error, Result};
 use crate::tasks::task::AnalogInput;
 use crate::{daqmx_call, Task};
+
+macro_rules! delegate_ai_channel {
+    () => {
+        delegate! {
+                to self.ai_channel {
+                    pub fn ai_max(&self) -> Result<f64>;
+                }
+        }
+    };
+}
 
 pub trait AnalogInputChannel: Sized {
     fn new(task: Task<AnalogInput>, name: &str) -> Result<Self>;
@@ -36,6 +47,17 @@ impl AnalogInputChannelBase {
 
 pub struct VoltageInputChannel {
     ai_channel: AnalogInputChannelBase,
+}
+
+impl VoltageInputChannel {
+    delegate_ai_channel!();
+}
+
+impl AnalogInputChannel for VoltageInputChannel {
+    fn new(task: Task<AnalogInput>, name: &str) -> Result<Self> {
+        let ai_channel = AnalogInputChannelBase::new(task, name)?;
+        Ok(Self { ai_channel })
+    }
 }
 
 #[repr(i32)]
