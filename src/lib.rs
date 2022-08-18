@@ -1,4 +1,4 @@
-mod channels;
+pub mod channels;
 pub mod error;
 mod tasks;
 mod types;

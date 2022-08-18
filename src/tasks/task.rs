@@ -7,31 +7,35 @@ use ni_daqmx_sys::DAQmxGetTaskName;
 use std::ffi::CString;
 use std::marker::PhantomData;
 use std::ptr;
+use std::sync::Arc;
 
-pub type TaskHandle = ni_daqmx_sys::TaskHandle;
+/// New type for the raw task handle from the C FFI
+struct TaskHandle(ni_daqmx_sys::TaskHandle);
 
-/// The task state represents the DAQmx Task State Machine.
-///
-/// Certain actions on a task will move it through the states
-pub enum ChannelType {
-    AnalogInput,
-    AnalogOutput,
-    DigitalInput,
-    DigitalOutput,
-    CounterInput,
-    CounterOutput,
+impl Drop for TaskHandle {
+    fn drop(&mut self) {
+        unsafe { ni_daqmx_sys::DAQmxClearTask(self.0) };
+    }
 }
 
+#[derive(Clone)]
+///Marker type for an analog input task.
 pub struct AnalogInput;
 
+#[derive(Clone)]
 pub struct Task<TYPE> {
-    handle: TaskHandle,
+    handle: Arc<TaskHandle>,
     channel_type: PhantomData<TYPE>,
 }
 
 impl<TYPE> Task<TYPE> {
-    fn handle(&mut self) -> TaskHandle {
-        self.handle
+    ///Get the sys crate handle for the task.
+    ///
+    /// This is designed for immediate use in the FFI.
+    /// You should not hold this raw handle yourself as you
+    /// lose the memory safety given by the wrapped task.
+    pub(crate) fn raw_handle(&self) -> ni_daqmx_sys::TaskHandle {
+        self.handle.0
     }
 
     /// Create a new task handle from a name. For use in specific task types.
@@ -48,7 +52,7 @@ impl<TYPE> Task<TYPE> {
         };
 
         Ok(Self {
-            handle,
+            handle: Arc::new(TaskHandle(handle)),
             channel_type: PhantomData,
         })
     }
@@ -69,7 +73,7 @@ impl<TYPE> Task<TYPE> {
     /// ```
     pub fn name(&mut self) -> Result<String> {
         //first call to get size.
-        let return_code = unsafe { DAQmxGetTaskName(self.handle(), std::ptr::null_mut(), 0) };
+        let return_code = unsafe { DAQmxGetTaskName(self.raw_handle(), std::ptr::null_mut(), 0) };
         if return_code < 0 {
             handle_error(return_code)?;
         }
@@ -77,18 +81,12 @@ impl<TYPE> Task<TYPE> {
         let buffer_size = return_code as u32;
         let mut buffer: Vec<i8> = vec![0i8; buffer_size as usize];
         daqmx_call!(DAQmxGetTaskName(
-            self.handle(),
+            self.raw_handle(),
             buffer.as_mut_ptr(),
             buffer_size
         ))?;
 
         Ok(buffer_to_string(buffer))
-    }
-}
-
-impl<TYPE> Drop for Task<TYPE> {
-    fn drop(&mut self) {
-        unsafe { ni_daqmx_sys::DAQmxClearTask(self.handle()) };
     }
 }
 
@@ -103,7 +101,7 @@ impl Task<AnalogInput> {
         let c_scale = CString::new("").unwrap();
 
         daqmx_call!(ni_daqmx_sys::DAQmxCreateAIVoltageChan(
-            self.handle,
+            self.raw_handle(),
             c_channel.as_ptr(),
             c_name.as_ptr(),
             ni_daqmx_sys::DAQmx_Val_Cfg_Default,
@@ -115,27 +113,18 @@ impl Task<AnalogInput> {
     }
 
     pub fn create_channel<B: ChannelBuilder>(&mut self, builder: B) -> Result<()> {
-        builder.add_to_task(self.handle)
+        builder.add_to_task(self.raw_handle())
     }
 
-    pub fn get_channel<'a, C: AnalogInputChannel<'a>>(&'a mut self, name: &'a str) -> Result<C> {
-        C::new(&mut self.handle, name)
-    }
-
-    pub fn configure_channel<'a, C: AnalogInputChannel<'a>>(
-        &'a mut self,
-        name: &'a str,
-        configuration_function: fn(C) -> Result<()>,
-    ) -> Result<()> {
-        let channel = self.get_channel(name)?;
-        configuration_function(channel)
+    pub fn get_channel<C: AnalogInputChannel>(&self, name: &str) -> Result<C> {
+        C::new(self.clone(), name)
     }
 
     pub fn read_scalar(&mut self, timeout: std::time::Duration) -> Result<f64> {
         let mut value = 0.0;
         let error_code = unsafe {
             ni_daqmx_sys::DAQmxReadAnalogScalarF64(
-                self.handle,
+                self.raw_handle(),
                 timeout.as_secs_f64(),
                 &mut value,
                 ptr::null_mut(),

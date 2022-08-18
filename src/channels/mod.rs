@@ -1,32 +1,32 @@
-use std::ffi::{CString, NulError};
+use std::ffi::CString;
 
 use ni_daqmx_sys::*;
 
 use crate::error::{handle_error, Result};
-use crate::tasks::TaskHandle;
+use crate::tasks::task::AnalogInput;
 use crate::{daqmx_call, Task};
 
-pub trait AnalogInputChannel<'a>: Sized {
-    fn new(task: &'a mut TaskHandle, name: &'a str) -> Result<Self>;
+pub trait AnalogInputChannel: Sized {
+    fn new(task: Task<AnalogInput>, name: &str) -> Result<Self>;
 }
 
-pub struct AnalogInputChannelBase<'a> {
-    task: &'a mut TaskHandle,
+pub struct AnalogInputChannelBase {
+    task: Task<AnalogInput>,
     name: CString,
 }
 
-impl<'a> AnalogInputChannel<'a> for AnalogInputChannelBase<'a> {
-    fn new(task: &'a mut TaskHandle, name: &'a str) -> Result<Self> {
+impl AnalogInputChannel for AnalogInputChannelBase {
+    fn new(task: Task<AnalogInput>, name: &str) -> Result<Self> {
         let name = CString::new(name)?;
         Ok(Self { task, name })
     }
 }
 
-impl<'a> AnalogInputChannelBase<'a> {
+impl AnalogInputChannelBase {
     pub fn ai_max(&self) -> Result<f64> {
         let mut value: f64 = 0.0;
         daqmx_call!(ni_daqmx_sys::DAQmxGetAIMax(
-            *self.task,
+            self.task.raw_handle(),
             self.name.as_ptr(),
             &mut value
         ))?;
@@ -34,8 +34,8 @@ impl<'a> AnalogInputChannelBase<'a> {
     }
 }
 
-pub struct VoltageInputChannel<'a> {
-    ai_channel: AnalogInputChannelBase<'a>,
+pub struct VoltageInputChannel {
+    ai_channel: AnalogInputChannelBase,
 }
 
 #[repr(i32)]
