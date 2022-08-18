@@ -105,6 +105,9 @@ pub trait ChannelBuilder {
     fn add_to_task(self, task: TaskHandle) -> Result<()>;
 }
 
+/// Marker trait for Analog Input channel builders so the task can adapt to the type.
+pub trait AnalogInputChannelBuilder: ChannelBuilder {}
+
 pub struct VoltageChannelBuilder {
     physical_channel: CString,
     name: Option<CString>,
@@ -147,3 +150,5 @@ impl ChannelBuilder for VoltageChannelBuilder {
         ))
     }
 }
+
+impl AnalogInputChannelBuilder for VoltageChannelBuilder {}
