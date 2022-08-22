@@ -1,14 +1,14 @@
 pub mod channels;
 pub mod error;
-mod tasks;
-mod types;
+pub mod tasks;
+pub mod types;
 
 pub use tasks::Task;
 
 use crate::channels::VoltageChannelBuilder;
 use crate::channels::VoltageInputChannel;
 use crate::tasks::InputTask;
-use crate::types::*;
+pub use crate::types::*;
 
 pub fn get_value() -> f64 {
     let mut task = Task::new("test task").unwrap();
@@ -21,16 +21,25 @@ pub fn get_value() -> f64 {
     let channel2: VoltageInputChannel = task.get_channel("PXI1Slot2/ai1").unwrap();
     println!("AI Max 2: {}", channel2.ai_max().unwrap());
     //return a value
+    task.configure_sample_clock_timing(
+        None,
+        1000.0,
+        ClockEdge::default(),
+        SampleMode::FiniteSamples,
+        5,
+    )
+    .unwrap();
 
-    let mut buffer = [0.0; 2];
+    let mut buffer = [0.0; 10];
     task.read(
         Timeout::Seconds(1.0),
         DataFillMode::GroupByChannel,
-        Some(1),
+        None,
         &mut buffer[..],
     )
     .unwrap();
 
+    println!("{:?}", buffer);
     return buffer[0];
 }
 

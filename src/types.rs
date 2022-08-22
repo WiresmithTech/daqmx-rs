@@ -59,7 +59,51 @@ impl From<Timeout> for f64 {
     }
 }
 
-/// Represents the behaviour for special sample counts
+///Represents the active edge of clock.
+///
+/// Default is rising.
+pub enum ClockEdge {
+    Rising,
+    Falling,
+}
+
+impl Default for ClockEdge {
+    fn default() -> Self {
+        Self::Rising
+    }
+}
+
+impl From<ClockEdge> for i32 {
+    fn from(edge: ClockEdge) -> Self {
+        match edge {
+            ClockEdge::Rising => ni_daqmx_sys::DAQmx_Val_Rising as i32,
+            ClockEdge::Falling => ni_daqmx_sys::DAQmx_Val_Falling as i32,
+        }
+    }
+}
+
+/// Represents the different timing modes of a task.
+pub enum SampleMode {
+    /// Acquire or generate a finite number of samples.
+    FiniteSamples,
+    /// Acquire or generate samples until you stop the task.
+    ContinousSamples,
+    /// Acquire or generate samples continuously using hardware timing without a buffer.
+    /// Hardware timed single point sample mode is supported only for the sample clock and change detection timing types.
+    HardwareTimedSinglePoint,
+}
+
+impl From<SampleMode> for i32 {
+    fn from(mode: SampleMode) -> Self {
+        match mode {
+            SampleMode::FiniteSamples => ni_daqmx_sys::DAQmx_Val_FiniteSamps as i32,
+            SampleMode::ContinousSamples => ni_daqmx_sys::DAQmx_Val_ContSamps as i32,
+            SampleMode::HardwareTimedSinglePoint => {
+                ni_daqmx_sys::DAQmx_Val_HWTimedSinglePoint as i32
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -89,5 +133,33 @@ mod tests {
         assert_eq!(f64::from(Timeout::NoWait), 0.0);
 
         assert_eq!(f64::from(Timeout::Seconds(2.1)), 2.1);
+    }
+
+    #[test]
+    fn edge_conversion_tests() {
+        assert_eq!(
+            i32::from(ClockEdge::Rising),
+            ni_daqmx_sys::DAQmx_Val_Rising as i32
+        );
+        assert_eq!(
+            i32::from(ClockEdge::Falling),
+            ni_daqmx_sys::DAQmx_Val_Falling as i32
+        );
+    }
+
+    #[test]
+    fn sample_mode_conversion_tests() {
+        assert_eq!(
+            i32::from(SampleMode::FiniteSamples),
+            ni_daqmx_sys::DAQmx_Val_FiniteSamps as i32
+        );
+        assert_eq!(
+            i32::from(SampleMode::ContinousSamples),
+            ni_daqmx_sys::DAQmx_Val_ContSamps as i32
+        );
+        assert_eq!(
+            i32::from(SampleMode::HardwareTimedSinglePoint),
+            ni_daqmx_sys::DAQmx_Val_HWTimedSinglePoint as i32
+        );
     }
 }

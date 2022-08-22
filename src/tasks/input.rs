@@ -1,3 +1,7 @@
+/// Provides traits around input task behaviours - notably reading.
+///
+/// In future it may expose a reader struct for managing the buffers and providing
+/// the different data representations for us.
 use ni_daqmx_sys::bool32;
 
 use crate::daqmx_call;

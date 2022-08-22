@@ -1,7 +1,7 @@
 use crate::channels::{AnalogInputChannel, AnalogInputChannelBuilder};
 use crate::daqmx_call;
 use crate::error::{handle_error, Result};
-use crate::types::{DataFillMode, Timeout};
+use crate::types::Timeout;
 use std::ptr;
 
 use super::input::InputTask;

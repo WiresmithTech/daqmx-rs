@@ -1,7 +1,7 @@
 use crate::channels::{AnalogInputChannel, AnalogInputChannelBuilder, ChannelBuilder};
 use crate::daqmx_call;
 use crate::error::{handle_error, Result};
-use crate::types::buffer_to_string;
+use crate::types::*;
 use ni_daqmx_sys::DAQmxGetTaskName;
 /// Provides a wrapper and functions for the DAQmx Task
 use std::ffi::CString;
@@ -87,5 +87,64 @@ impl<TYPE> Task<TYPE> {
         ))?;
 
         Ok(buffer_to_string(buffer))
+    }
+
+    /// Configure a hardware timed task with the provided parameters.
+    ///
+    /// # Argument Notes
+    ///
+    /// * If [`None`] is provided to source then the onboard clock is used.
+    /// * For external sources, set `rate` to the maximum expected frequency.
+    /// * [`ClockEdge`] provides a default if you aren't concerned with the actual edge. This is the rising edge.
+    /// * For a continuous acquisition, `samples per channel` is used to configure the internal buffer size.
+    pub fn configure_sample_clock_timing(
+        &mut self,
+        source: Option<&str>,
+        rate: f64,
+        edge: ClockEdge,
+        mode: SampleMode,
+        samples_per_channel: u64,
+    ) -> Result<()> {
+        let source_c = match source {
+            Some(name) => CString::new(name)?,
+            None => CString::new("OnboardClock")?,
+        };
+
+        daqmx_call!(ni_daqmx_sys::DAQmxCfgSampClkTiming(
+            self.raw_handle(),
+            source_c.as_ptr(),
+            rate,
+            edge.into(),
+            mode.into(),
+            samples_per_channel
+        ))
+    }
+
+    /// Transitions the task from the committed state to the running state, which begins measurement or generation.
+    /// Using this function is required for some applications and optional for others.
+    ///
+    /// If you do not use this function, a measurement task starts automatically when a read operation begins.
+    /// The autoStart parameter of the NI-DAQmx Write functions determines if a generation task starts automatically when you use an NI-DAQmx Write function.
+    ///
+    ///If you do not call [`Task::start`] and [`Task::stop`] when you call NI-DAQmx Read functions or NI-DAQmx Write functions multiple times, such as in a loop, the task starts and stops repeatedly.
+    /// Starting and stopping a task repeatedly reduces the performance of the application.
+    pub fn start(&mut self) -> Result<()> {
+        daqmx_call!(ni_daqmx_sys::DAQmxStartTask(self.raw_handle()))
+    }
+
+    /// Stops the task and returns it to the state it was in before it was started.
+    ///
+    ///If you do not call [`Task::start`] and [`Task::stop`] when you call NI-DAQmx Read functions or NI-DAQmx Write functions multiple times, such as in a loop, the task starts and stops repeatedly.
+    /// Starting and stopping a task repeatedly reduces the performance of the application.
+    pub fn stop(&mut self) -> Result<()> {
+        daqmx_call!(ni_daqmx_sys::DAQmxStopTask(self.raw_handle()))
+    }
+
+    /// Waits for the measurement or generation to complete. Use this function to ensure that the specified operation is complete before you stop the task.
+    pub fn wait_until_done(&mut self, timeout: Timeout) -> Result<()> {
+        daqmx_call!(ni_daqmx_sys::DAQmxWaitUntilTaskDone(
+            self.raw_handle(),
+            timeout.into()
+        ))
     }
 }
