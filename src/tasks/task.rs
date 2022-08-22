@@ -89,27 +89,3 @@ impl<TYPE> Task<TYPE> {
         Ok(buffer_to_string(buffer))
     }
 }
-
-impl Task<AnalogInput> {
-    pub fn create_channel<B: AnalogInputChannelBuilder>(&mut self, builder: B) -> Result<()> {
-        builder.add_to_task(self.raw_handle())
-    }
-
-    pub fn get_channel<C: AnalogInputChannel>(&self, name: &str) -> Result<C> {
-        C::new(self.clone(), name)
-    }
-
-    pub fn read_scalar(&mut self, timeout: std::time::Duration) -> Result<f64> {
-        let mut value = 0.0;
-        let error_code = unsafe {
-            ni_daqmx_sys::DAQmxReadAnalogScalarF64(
-                self.raw_handle(),
-                timeout.as_secs_f64(),
-                &mut value,
-                ptr::null_mut(),
-            )
-        };
-        handle_error(error_code)?;
-        Ok(value)
-    }
-}

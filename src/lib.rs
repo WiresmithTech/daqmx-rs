@@ -5,9 +5,10 @@ mod types;
 
 pub use tasks::Task;
 
-use crate::channels::AnalogInputChannelBase;
 use crate::channels::VoltageChannelBuilder;
 use crate::channels::VoltageInputChannel;
+use crate::tasks::InputTask;
+use crate::types::*;
 
 pub fn get_value() -> f64 {
     let mut task = Task::new("test task").unwrap();
@@ -21,7 +22,16 @@ pub fn get_value() -> f64 {
     println!("AI Max 2: {}", channel2.ai_max().unwrap());
     //return a value
 
-    return task.read_scalar(std::time::Duration::from_secs(1)).unwrap();
+    let mut buffer = [0.0; 2];
+    task.read(
+        Timeout::Seconds(1.0),
+        DataFillMode::GroupByChannel,
+        Some(1),
+        &mut buffer[..],
+    )
+    .unwrap();
+
+    return buffer[0];
 }
 
 #[macro_export]
