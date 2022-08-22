@@ -1,4 +1,3 @@
-use crate::channels::{AnalogInputChannel, AnalogInputChannelBuilder, ChannelBuilder};
 use crate::daqmx_call;
 use crate::error::{handle_error, Result};
 use crate::types::*;
@@ -11,6 +10,9 @@ use std::sync::Arc;
 
 /// New type for the raw task handle from the C FFI
 struct TaskHandle(ni_daqmx_sys::TaskHandle);
+
+unsafe impl Send for TaskHandle {}
+unsafe impl Sync for TaskHandle {}
 
 impl Drop for TaskHandle {
     fn drop(&mut self) {
@@ -63,9 +65,9 @@ impl<TYPE> Task<TYPE> {
     ///
     /// # Example
     /// ```
-    /// use daqmx::Task;
+    /// use daqmx::tasks::{Task, AnalogInput};
     ///
-    /// let mut task = Task::new("").unwrap();
+    /// let mut task = Task::<AnalogInput>::new("").unwrap();
     /// let name = task.name().unwrap();
     ///
     /// // Returns Non-Empty Name
@@ -146,5 +148,28 @@ impl<TYPE> Task<TYPE> {
             self.raw_handle(),
             timeout.into()
         ))
+    }
+
+    ///Gets whether DAQmx read automatically starts the task.
+    pub fn read_auto_start(&mut self) -> Result<bool> {
+        let mut value: bool32 = 0;
+        daqmx_call!(ni_daqmx_sys::DAQmxGetReadAutoStart(
+            self.raw_handle(),
+            &mut value
+        ))?;
+        Ok(value != 0)
+    }
+
+    ///Sets whether DAQmx read automatically starts the task.
+    pub fn set_read_auto_start(&mut self, value: bool) -> Result<()> {
+        let value: bool32 = match value {
+            true => 1,
+            false => 0,
+        };
+        daqmx_call!(ni_daqmx_sys::DAQmxSetReadAutoStart(
+            self.raw_handle(),
+            value
+        ))?;
+        Ok(())
     }
 }

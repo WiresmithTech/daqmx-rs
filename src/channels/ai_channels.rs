@@ -3,9 +3,9 @@ use std::ffi::CString;
 
 use ni_daqmx_sys::*;
 
+use crate::daqmx_call;
 use crate::error::{handle_error, Result};
-use crate::tasks::AnalogInput;
-use crate::{daqmx_call, Task};
+use crate::tasks::{AnalogInput, Task};
 
 macro_rules! delegate_ai_channel {
     () => {

@@ -4,7 +4,7 @@
 /// that CString doesn't like for string outputs.
 ///
 /// This function will strip the end null out of the buffer and format to a string.
-pub fn buffer_to_string(buffer: Vec<i8>) -> String {
+pub(crate) fn buffer_to_string(buffer: Vec<i8>) -> String {
     // First get just valid chars as u8
     let buffer_u8 = buffer
         .into_iter()
@@ -87,7 +87,7 @@ pub enum SampleMode {
     /// Acquire or generate a finite number of samples.
     FiniteSamples,
     /// Acquire or generate samples until you stop the task.
-    ContinousSamples,
+    ContinuousSamples,
     /// Acquire or generate samples continuously using hardware timing without a buffer.
     /// Hardware timed single point sample mode is supported only for the sample clock and change detection timing types.
     HardwareTimedSinglePoint,
@@ -97,13 +97,16 @@ impl From<SampleMode> for i32 {
     fn from(mode: SampleMode) -> Self {
         match mode {
             SampleMode::FiniteSamples => ni_daqmx_sys::DAQmx_Val_FiniteSamps as i32,
-            SampleMode::ContinousSamples => ni_daqmx_sys::DAQmx_Val_ContSamps as i32,
+            SampleMode::ContinuousSamples => ni_daqmx_sys::DAQmx_Val_ContSamps as i32,
             SampleMode::HardwareTimedSinglePoint => {
                 ni_daqmx_sys::DAQmx_Val_HWTimedSinglePoint as i32
             }
         }
     }
 }
+
+//Used quite a bit so lets re-export here with conversion.
+pub use ni_daqmx_sys::bool32;
 
 #[cfg(test)]
 mod tests {
@@ -154,7 +157,7 @@ mod tests {
             ni_daqmx_sys::DAQmx_Val_FiniteSamps as i32
         );
         assert_eq!(
-            i32::from(SampleMode::ContinousSamples),
+            i32::from(SampleMode::ContinuousSamples),
             ni_daqmx_sys::DAQmx_Val_ContSamps as i32
         );
         assert_eq!(
