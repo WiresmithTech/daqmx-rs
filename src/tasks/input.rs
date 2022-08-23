@@ -8,7 +8,7 @@ use crate::daqmx_call;
 use crate::error::{handle_error, Result};
 use crate::types::{DataFillMode, Timeout};
 
-pub trait InputTask<T> {
+pub trait InputTask<T>: DAQmxInput<T> {
     /// Read a single value from the task with the given timeout.
     fn read_scalar(&mut self, timeout: Timeout) -> Result<T>;
 
@@ -52,9 +52,10 @@ pub trait InputTask<T> {
 
         Ok(actual_samples_per_channel)
     }
+}
 
-    /// A basic wrapper for the daqmx read function so that implementers don't have to repeat common setup.
-    /// Operates like the core of the channeling pattern - not expected to be called publically.
+pub(crate) trait DAQmxInput<T> {
+    /// A basic wrapper for the daqmx read function so that implementers don't have to repeat common setup for input task.
     unsafe fn daqmx_read(
         &mut self,
         samples_per_channel: i32,

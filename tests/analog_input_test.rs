@@ -79,3 +79,22 @@ fn test_stop() {
         Err(daqmx::error::DaqmxError::DaqmxError(-200473, _))
     ))
 }
+
+#[test]
+fn test_voltage_input_builder() {
+    let mut ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai1").unwrap();
+    ch1.name("my name").unwrap();
+    ch1.scale = VoltageScale::Volts;
+    ch1.max = 10.0;
+    ch1.min = 0.0;
+    ch1.terminal_config = AnalogTerminalConfig::RSE;
+
+    let mut task = Task::new("").unwrap();
+    task.create_channel(ch1).unwrap();
+
+    let configured: VoltageInputChannel = task.get_channel("my name").unwrap();
+    assert_eq!(
+        configured.physical_channel().unwrap(),
+        "PXI1Slot2/ai1".to_owned()
+    );
+}

@@ -6,12 +6,15 @@ use ni_daqmx_sys::*;
 use crate::daqmx_call;
 use crate::error::{handle_error, Result};
 use crate::tasks::{AnalogInput, Task};
+//feels like a circular dependency. Don't love it.
+use super::Channel;
 
 macro_rules! delegate_ai_channel {
     () => {
         delegate! {
                 to self.ai_channel {
                     pub fn ai_max(&self) -> Result<f64>;
+                    pub fn physical_channel(&self) -> Result<String>;
                 }
         }
     };
@@ -33,15 +36,25 @@ impl AnalogInputChannel for AnalogInputChannelBase {
     }
 }
 
+impl Channel for AnalogInputChannelBase {
+    fn raw_handle(&self) -> *mut std::os::raw::c_void {
+        self.task.raw_handle()
+    }
+
+    fn name(&self) -> &std::ffi::CStr {
+        &self.name
+    }
+}
+
 impl AnalogInputChannelBase {
+    pub fn physical_channel(&self) -> Result<String> {
+        self.read_channel_property_string(ni_daqmx_sys::DAQmxGetPhysicalChanName)
+    }
     pub fn ai_max(&self) -> Result<f64> {
-        let mut value: f64 = 0.0;
-        daqmx_call!(ni_daqmx_sys::DAQmxGetAIMax(
-            self.task.raw_handle(),
-            self.name.as_ptr(),
-            &mut value
-        ))?;
-        Ok(value)
+        self.read_channel_property(ni_daqmx_sys::DAQmxGetAIMax)
+    }
+    pub fn ai_min(&self) -> Result<f64> {
+        self.read_channel_property(ni_daqmx_sys::DAQmxGetAIMin)
     }
 }
 
@@ -62,11 +75,17 @@ impl AnalogInputChannel for VoltageInputChannel {
 
 #[repr(i32)]
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum AnalogTerminalConfig {
+/// Defines the input configuration for the analog input.
+pub enum AnalogTerminalConfig {
+    /// Uses the [default for the type/hardware combination](https://www.ni.com/docs/en-US/bundle/ni-daqmx-device-considerations/page/defaulttermconfig.html).
     Default = DAQmx_Val_Cfg_Default,
+    /// Configures inputs for reference single ended (reference to AI GND)
     RSE = DAQmx_Val_RSE as i32,
+    /// Cofngures inputs for non-reference single ended (reference to AI SENSE)
     NRSE = DAQmx_Val_NRSE as i32,
+    /// Configures inputs for differential mode.
     Differential = DAQmx_Val_Diff as i32,
+    /// Configures inputs for pseudo-differential mode
     PseudoDifferential = DAQmx_Val_PseudoDiff as i32,
 }
 
@@ -77,7 +96,7 @@ impl Default for AnalogTerminalConfig {
 }
 
 #[derive(Clone)]
-enum VoltageScale {
+pub enum VoltageScale {
     Volts,
     CustomScale(CString),
 }
@@ -111,10 +130,10 @@ pub trait AnalogInputChannelBuilder: ChannelBuilder {}
 pub struct VoltageChannelBuilder {
     physical_channel: CString,
     name: Option<CString>,
-    max: f64,
-    min: f64,
-    scale: VoltageScale,
-    terminal_config: AnalogTerminalConfig,
+    pub max: f64,
+    pub min: f64,
+    pub scale: VoltageScale,
+    pub terminal_config: AnalogTerminalConfig,
 }
 
 impl VoltageChannelBuilder {

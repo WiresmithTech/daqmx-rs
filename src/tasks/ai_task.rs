@@ -4,7 +4,7 @@ use crate::error::{handle_error, Result};
 use crate::types::Timeout;
 use std::ptr;
 
-use super::input::InputTask;
+use super::input::{DAQmxInput, InputTask};
 use super::{task::AnalogInput, Task};
 
 impl Task<AnalogInput> {
@@ -28,7 +28,9 @@ impl InputTask<f64> for Task<AnalogInput> {
         ))?;
         Ok(value)
     }
+}
 
+impl DAQmxInput<f64> for Task<AnalogInput> {
     unsafe fn daqmx_read(
         &mut self,
         samples_per_channel: i32,

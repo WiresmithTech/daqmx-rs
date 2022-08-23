@@ -108,6 +108,7 @@ impl From<SampleMode> for i32 {
 //Used quite a bit so lets re-export here with conversion.
 pub use ni_daqmx_sys::bool32;
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
