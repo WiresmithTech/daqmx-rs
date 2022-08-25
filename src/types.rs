@@ -32,8 +32,8 @@ pub enum DataFillMode {
 impl From<DataFillMode> for ni_daqmx_sys::bool32 {
     fn from(fill_mode: DataFillMode) -> Self {
         match fill_mode {
-            DataFillMode::GroupByChannel => ni_daqmx_sys::DAQmx_Val_GroupByChannel,
-            DataFillMode::GroupByScanNumber => ni_daqmx_sys::DAQmx_Val_GroupByScanNumber,
+            DataFillMode::GroupByChannel => ni_daqmx_sys::DAQmx_Val_GroupByChannel as u32,
+            DataFillMode::GroupByScanNumber => ni_daqmx_sys::DAQmx_Val_GroupByScanNumber as u32,
         }
     }
 }
@@ -107,7 +107,6 @@ impl From<SampleMode> for i32 {
 
 //Used quite a bit so lets re-export here with conversion.
 pub use ni_daqmx_sys::bool32;
-
 
 #[cfg(test)]
 mod tests {

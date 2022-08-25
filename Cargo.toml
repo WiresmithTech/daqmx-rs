@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ni-daqmx-sys = {path = "../ni-daqmx-sys", version = "20.7"}
+ni-daqmx-sys = {path = "../ni-daqmx-sys", version = "20.7.1"}
 thiserror = "1"
 # Log is used to provide details of DAQmx warnings that aren't otherwise exposed
 log = "0.4"

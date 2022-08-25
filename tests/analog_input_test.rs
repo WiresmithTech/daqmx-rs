@@ -86,7 +86,7 @@ fn test_voltage_input_builder() {
     ch1.name("my name").unwrap();
     ch1.scale = VoltageScale::Volts;
     ch1.max = 10.0;
-    ch1.min = 0.0;
+    ch1.min = -10.0;
     ch1.terminal_config = AnalogTerminalConfig::RSE;
 
     let mut task = Task::new("").unwrap();
@@ -97,4 +97,11 @@ fn test_voltage_input_builder() {
         configured.physical_channel().unwrap(),
         "PXI1Slot2/ai1".to_owned()
     );
+    assert_eq!(configured.ai_max().unwrap(), 10.0);
+    assert_eq!(configured.ai_min().unwrap(), -10.0);
+    assert_eq!(
+        configured.ai_terminal_config().unwrap(),
+        AnalogTerminalConfig::RSE
+    );
+    assert_eq!(configured.scale().unwrap(), VoltageScale::Volts);
 }

@@ -4,7 +4,7 @@ use std::ffi::CString;
 use ni_daqmx_sys::*;
 
 use crate::daqmx_call;
-use crate::error::{handle_error, Result};
+use crate::error::{handle_error, DaqmxError, Result};
 use crate::tasks::{AnalogInput, Task};
 //feels like a circular dependency. Don't love it.
 use super::Channel;
@@ -14,7 +14,9 @@ macro_rules! delegate_ai_channel {
         delegate! {
                 to self.ai_channel {
                     pub fn ai_max(&self) -> Result<f64>;
+                    pub fn ai_min(&self) -> Result<f64>;
                     pub fn physical_channel(&self) -> Result<String>;
+                    pub fn ai_terminal_config(&self) -> Result<AnalogTerminalConfig>;
                 }
         }
     };
@@ -56,6 +58,13 @@ impl AnalogInputChannelBase {
     pub fn ai_min(&self) -> Result<f64> {
         self.read_channel_property(ni_daqmx_sys::DAQmxGetAIMin)
     }
+    pub fn ai_terminal_config(&self) -> Result<AnalogTerminalConfig> {
+        self.read_channel_property(ni_daqmx_sys::DAQmxGetAITermCfg)?
+            .try_into()
+    }
+    pub fn custom_scale_name(&self) -> Result<String> {
+        self.read_channel_property_string(ni_daqmx_sys::DAQmxGetAICustomScaleName)
+    }
 }
 
 pub struct VoltageInputChannel {
@@ -64,6 +73,19 @@ pub struct VoltageInputChannel {
 
 impl VoltageInputChannel {
     delegate_ai_channel!();
+    pub fn scale(&self) -> Result<VoltageScale> {
+        let scale: VoltageScale = self
+            .ai_channel
+            .read_channel_property(DAQmxGetAIVoltageUnits)?
+            .try_into()?;
+
+        if let VoltageScale::CustomScale(_) = scale {
+            let name = self.ai_channel.custom_scale_name()?;
+            Ok(VoltageScale::CustomScale(Some(CString::new(name)?)))
+        } else {
+            Ok(scale)
+        }
+    }
 }
 
 impl AnalogInputChannel for VoltageInputChannel {
@@ -74,19 +96,19 @@ impl AnalogInputChannel for VoltageInputChannel {
 }
 
 #[repr(i32)]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 /// Defines the input configuration for the analog input.
 pub enum AnalogTerminalConfig {
     /// Uses the [default for the type/hardware combination](https://www.ni.com/docs/en-US/bundle/ni-daqmx-device-considerations/page/defaulttermconfig.html).
     Default = DAQmx_Val_Cfg_Default,
     /// Configures inputs for reference single ended (reference to AI GND)
-    RSE = DAQmx_Val_RSE as i32,
+    RSE = DAQmx_Val_RSE,
     /// Cofngures inputs for non-reference single ended (reference to AI SENSE)
-    NRSE = DAQmx_Val_NRSE as i32,
+    NRSE = DAQmx_Val_NRSE,
     /// Configures inputs for differential mode.
-    Differential = DAQmx_Val_Diff as i32,
+    Differential = DAQmx_Val_Diff,
     /// Configures inputs for pseudo-differential mode
-    PseudoDifferential = DAQmx_Val_PseudoDiff as i32,
+    PseudoDifferential = DAQmx_Val_PseudoDiff,
 }
 
 impl Default for AnalogTerminalConfig {
@@ -95,17 +117,41 @@ impl Default for AnalogTerminalConfig {
     }
 }
 
-#[derive(Clone)]
+impl TryFrom<i32> for AnalogTerminalConfig {
+    type Error = DaqmxError;
+
+    fn try_from(value: i32) -> std::result::Result<Self, Self::Error> {
+        //The if statements look wierd but seemed like the best way for the type conversion to be combined.
+        match value {
+            DAQmx_Val_Cfg_Default => Ok(Self::Default),
+            DAQmx_Val_RSE => Ok(Self::RSE),
+            DAQmx_Val_NRSE => Ok(Self::NRSE),
+            DAQmx_Val_Diff => Ok(Self::Differential),
+            DAQmx_Val_PseudoDiff => Ok(Self::PseudoDifferential),
+            _ => Err(DaqmxError::UnexpectedValue(
+                "AnalogTerminalConfig".to_string(),
+                value,
+            )),
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum VoltageScale {
     Volts,
-    CustomScale(CString),
+    /// A custom scale is in use. If we have not determined the name yet then this contains `None`.
+    /// If we have determined the name, it will be contained in the option.
+    CustomScale(Option<CString>),
+    /// Units are set from the TEDS configuration. This cas should be read only.
+    FromTEDS,
 }
 
 impl From<VoltageScale> for i32 {
     fn from(scale: VoltageScale) -> Self {
         match scale {
-            VoltageScale::Volts => DAQmx_Val_Volts as i32,
-            VoltageScale::CustomScale(_) => DAQmx_Val_FromCustomScale as i32,
+            VoltageScale::Volts => DAQmx_Val_Volts,
+            VoltageScale::CustomScale(_) => DAQmx_Val_FromCustomScale,
+            VoltageScale::FromTEDS => DAQmx_Val_FromTEDS,
         }
     }
 }
@@ -113,9 +159,27 @@ impl From<VoltageScale> for i32 {
 ///For the scale name.
 impl From<VoltageScale> for CString {
     fn from(scale: VoltageScale) -> Self {
+        // review: should this actually error if not custom.
         match scale {
-            VoltageScale::Volts => CString::default(),
-            VoltageScale::CustomScale(name) => name.clone(),
+            VoltageScale::CustomScale(Some(name)) => name.clone(),
+            _ => CString::default(),
+        }
+    }
+}
+
+impl TryFrom<i32> for VoltageScale {
+    type Error = DaqmxError;
+
+    fn try_from(value: i32) -> std::result::Result<Self, Self::Error> {
+        //The if statements look wierd but seemed like the best way for the type conversion to be combined.
+        match value {
+            DAQmx_Val_Volts => Ok(Self::Volts),
+            DAQmx_Val_FromCustomScale => Ok(Self::CustomScale(None)),
+            DAQmx_Val_FromTEDS => Ok(Self::FromTEDS),
+            _ => Err(DaqmxError::UnexpectedValue(
+                "AnalogTerminalConfig".to_string(),
+                value,
+            )),
         }
     }
 }
