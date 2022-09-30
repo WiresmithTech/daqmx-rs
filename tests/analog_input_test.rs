@@ -3,6 +3,8 @@
 use std::ffi::CString;
 
 use daqmx::channels::*;
+use daqmx::scales::LinearScale;
+use daqmx::scales::PreScaledUnits;
 use daqmx::tasks::*;
 use daqmx::types::*;
 
@@ -110,6 +112,8 @@ fn test_voltage_input_builder() {
 
 #[test]
 fn test_voltage_input_builder_custom_scale() {
+    //create custom scale first.
+    let scale = LinearScale::new("TestScale", 1.0, 0.0, PreScaledUnits::Volts, "test").unwrap();
     let mut ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai1").unwrap();
     ch1.name("my name").unwrap();
     ch1.scale = VoltageScale::CustomScale(Some(CString::new("TestScale").expect("Name Error")));

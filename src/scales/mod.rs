@@ -1,14 +1,62 @@
 //! Implements custom scaling functions
 //!
 
+use std::ffi::CString;
+
 use ni_daqmx_sys::*;
 use num::FromPrimitive;
 use num_derive::FromPrimitive;
 
-trait CustomScale {}
+use crate::{
+    daqmx_call,
+    error::{handle_error, DaqmxError, Result},
+};
 
+/// The custom scale type encapsulates common custom scale functions used by all scale types.
+///
+/// It is intended to be used as an inner type for more specific types.
+pub struct CustomScale {
+    name: CString,
+}
+
+impl CustomScale {
+    fn new(name: CString) -> Self {
+        Self { name }
+    }
+}
+
+/// A linear custom scale.
+///
+/// This scales the inputs according to a y = mx + c linear equation.
+pub struct LinearScale {
+    inner: CustomScale,
+}
+
+impl LinearScale {
+    pub fn new(
+        name: &str,
+        slope: f64,
+        y_intercept: f64,
+        pre_scaled_units: PreScaledUnits,
+        scaled_units: &str,
+    ) -> Result<Self> {
+        let name = CString::new(name)?;
+        daqmx_call!(DAQmxCreateLinScale(
+            name.as_ptr(),
+            slope,
+            y_intercept,
+            pre_scaled_units as i32,
+            CString::new(scaled_units)?.as_ptr()
+        ))?;
+        Ok(Self {
+            inner: CustomScale::new(name),
+        })
+    }
+}
+
+/// Represents the different scaled units provided by DAQmx Channel types.
 #[repr(i32)]
-#[derive(FromPrimitive)]
+#[derive(FromPrimitive, PartialEq, Debug, Clone, Eq)]
 pub enum PreScaledUnits {
     Volts = DAQmx_Val_Volts,
     Amps = DAQmx_Val_Amps,
@@ -38,4 +86,41 @@ pub enum PreScaledUnits {
     PoundInches = DAQmx_Val_InchPounds,
     PoundFeet = DAQmx_Val_FootPounds,
     FromTEDS = DAQmx_Val_FromTEDS,
+}
+
+impl TryFrom<i32> for PreScaledUnits {
+    type Error = DaqmxError;
+
+    fn try_from(value: i32) -> std::result::Result<Self, Self::Error> {
+        match PreScaledUnits::from_i32(value) {
+            Some(unit) => Ok(unit),
+            None => Err(DaqmxError::UnexpectedValue(
+                "DAQmx Units".to_string(),
+                value,
+            )),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_unit_from_i32() {
+        assert_eq!(
+            PreScaledUnits::Volts,
+            PreScaledUnits::try_from(DAQmx_Val_Volts).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_unit_to_i32() {
+        assert_eq!(PreScaledUnits::Volts as i32, DAQmx_Val_Volts);
+    }
+
+    #[test]
+    fn test_error_invalid_unit() {
+        assert!(PreScaledUnits::try_from(0).is_err())
+    }
 }
