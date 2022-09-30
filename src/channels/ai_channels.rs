@@ -5,6 +5,7 @@ use ni_daqmx_sys::*;
 
 use crate::daqmx_call;
 use crate::error::{handle_error, DaqmxError, Result};
+use crate::scales::PreScaledUnits;
 use crate::tasks::{AnalogInput, Task};
 //feels like a circular dependency. Don't love it.
 use super::Channel;
@@ -149,9 +150,9 @@ pub enum VoltageScale {
 impl From<VoltageScale> for i32 {
     fn from(scale: VoltageScale) -> Self {
         match scale {
-            VoltageScale::Volts => DAQmx_Val_Volts,
+            VoltageScale::Volts => PreScaledUnits::Volts as i32,
             VoltageScale::CustomScale(_) => DAQmx_Val_FromCustomScale,
-            VoltageScale::FromTEDS => DAQmx_Val_FromTEDS,
+            VoltageScale::FromTEDS => PreScaledUnits::FromTEDS as i32,
         }
     }
 }

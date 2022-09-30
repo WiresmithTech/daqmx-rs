@@ -11,3 +11,6 @@ thiserror = "1"
 # Log is used to provide details of DAQmx warnings that aren't otherwise exposed
 log = "0.4"
 delegate = "0.7"
+num = "0.4"
+num-derive = "0.3"
+num-traits = "0.2"

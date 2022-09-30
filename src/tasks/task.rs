@@ -5,7 +5,6 @@ use ni_daqmx_sys::DAQmxGetTaskName;
 /// Provides a wrapper and functions for the DAQmx Task
 use std::ffi::CString;
 use std::marker::PhantomData;
-use std::os::raw::c_char;
 use std::ptr;
 use std::sync::Arc;
 
@@ -173,6 +172,4 @@ impl<TYPE> Task<TYPE> {
         ))?;
         Ok(())
     }
-
-   
 }

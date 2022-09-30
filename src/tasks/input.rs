@@ -54,7 +54,7 @@ pub trait InputTask<T>: DAQmxInput<T> {
     }
 }
 
-pub(crate) trait DAQmxInput<T> {
+pub trait DAQmxInput<T> {
     /// A basic wrapper for the daqmx read function so that implementers don't have to repeat common setup for input task.
     unsafe fn daqmx_read(
         &mut self,

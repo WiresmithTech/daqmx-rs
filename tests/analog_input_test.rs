@@ -1,5 +1,7 @@
 //! Integration tests for covering the analog input tasks and channels.
 //!
+use std::ffi::CString;
+
 use daqmx::channels::*;
 use daqmx::tasks::*;
 use daqmx::types::*;
@@ -104,4 +106,24 @@ fn test_voltage_input_builder() {
         AnalogTerminalConfig::RSE
     );
     assert_eq!(configured.scale().unwrap(), VoltageScale::Volts);
+}
+
+#[test]
+fn test_voltage_input_builder_custom_scale() {
+    let mut ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai1").unwrap();
+    ch1.name("my name").unwrap();
+    ch1.scale = VoltageScale::CustomScale(Some(CString::new("TestScale").expect("Name Error")));
+    ch1.max = 10.0;
+    ch1.min = -10.0;
+    ch1.terminal_config = AnalogTerminalConfig::RSE;
+
+    let mut task = Task::new("").unwrap();
+    task.create_channel(ch1).unwrap();
+
+    let configured: VoltageInputChannel = task.get_channel("my name").unwrap();
+
+    assert_eq!(
+        configured.scale().unwrap(),
+        VoltageScale::CustomScale(Some(CString::new("TestScale").expect("Name Error")))
+    );
 }

@@ -4,7 +4,7 @@ pub use ai_channels::*;
 
 use crate::daqmx_call;
 use crate::error::{handle_error, string_property_size_error, DaqmxError, Result};
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::os::raw::{c_char, c_void};
 
 trait Channel {
