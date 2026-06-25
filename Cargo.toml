@@ -1,15 +1,12 @@
 [package]
 name = "daqmx"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 ni-daqmx-sys = {path = "../ni-daqmx-sys", version = "26.2"}
-thiserror = "1"
+thiserror = "2"
 # Log is used to provide details of DAQmx warnings that aren't otherwise exposed
 log = "0.4"
-num = "0.4"
-num-derive = "0.3"
-num-traits = "0.2"

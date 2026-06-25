@@ -4,12 +4,10 @@
 use std::ffi::CString;
 
 use ni_daqmx_sys::*;
-use num::FromPrimitive;
-use num_derive::FromPrimitive;
 
 use crate::{
     daqmx_call,
-    error::{handle_error, DaqmxError, Result},
+    error::{DaqmxError, Result},
 };
 
 /// The custom scale type encapsulates common custom scale functions used by all scale types.
@@ -56,7 +54,7 @@ impl LinearScale {
 
 /// Represents the different scaled units provided by DAQmx Channel types.
 #[repr(i32)]
-#[derive(FromPrimitive, PartialEq, Debug, Clone, Eq)]
+#[derive(PartialEq, Debug, Clone, Eq)]
 pub enum PreScaledUnits {
     Volts = DAQmx_Val_Volts,
     Amps = DAQmx_Val_Amps,
@@ -82,7 +80,7 @@ pub enum PreScaledUnits {
     VoltsPerVolt = DAQmx_Val_VoltsPerVolt,
     MilliVoltsPerVolt = DAQmx_Val_mVoltsPerVolt,
     NewtonMeters = DAQmx_Val_NewtonMeters,
-    OunceInches = DAQmx_Val_InchOunces,
+    InchOunces = DAQmx_Val_InchOunces,
     PoundInches = DAQmx_Val_InchPounds,
     PoundFeet = DAQmx_Val_FootPounds,
     FromTEDS = DAQmx_Val_FromTEDS,
@@ -92,9 +90,36 @@ impl TryFrom<i32> for PreScaledUnits {
     type Error = DaqmxError;
 
     fn try_from(value: i32) -> std::result::Result<Self, Self::Error> {
-        match PreScaledUnits::from_i32(value) {
-            Some(unit) => Ok(unit),
-            None => Err(DaqmxError::UnexpectedValue(
+        match  value {
+            DAQmx_Val_Volts => Ok(PreScaledUnits::Volts),
+            DAQmx_Val_Amps => Ok(PreScaledUnits::Amps),
+            DAQmx_Val_DegF => Ok(PreScaledUnits::DegreesFarenheit),
+            DAQmx_Val_DegC => Ok(PreScaledUnits::DegreesCelcius),
+            DAQmx_Val_DegR => Ok(PreScaledUnits::DegreesRankine),
+            DAQmx_Val_Kelvins => Ok(PreScaledUnits::Kelvin),
+            DAQmx_Val_Strain => Ok(PreScaledUnits::Strain),
+            DAQmx_Val_Ohms => Ok(PreScaledUnits::Ohms),
+            DAQmx_Val_Hz => Ok(PreScaledUnits::Hertz),
+            DAQmx_Val_Seconds => Ok(PreScaledUnits::Seconds),
+            DAQmx_Val_Meters => Ok(PreScaledUnits::Meters),
+            DAQmx_Val_Inches => Ok(PreScaledUnits::Inches),
+            DAQmx_Val_Degrees => Ok(PreScaledUnits::Degrees),
+            DAQmx_Val_Radians => Ok(PreScaledUnits::Radians),
+            DAQmx_Val_g => Ok(PreScaledUnits::G),
+            DAQmx_Val_MetersPerSecondSquared => Ok(PreScaledUnits::MetersPerSecondSquared),
+            DAQmx_Val_Newtons => Ok(PreScaledUnits::Newtons),
+            DAQmx_Val_Pounds => Ok(PreScaledUnits::Pounds),
+            DAQmx_Val_PoundsPerSquareInch => Ok(PreScaledUnits::PSI),
+            DAQmx_Val_Bar => Ok(PreScaledUnits::Bar),
+            DAQmx_Val_Pascals => Ok(PreScaledUnits::Pascals),
+            DAQmx_Val_VoltsPerVolt => Ok(PreScaledUnits::VoltsPerVolt),
+            DAQmx_Val_mVoltsPerVolt => Ok(PreScaledUnits::MilliVoltsPerVolt),
+            DAQmx_Val_NewtonMeters => Ok(PreScaledUnits::NewtonMeters),
+            DAQmx_Val_InchOunces => Ok(PreScaledUnits::InchOunces),
+            DAQmx_Val_InchPounds => Ok(PreScaledUnits::PoundInches),
+            DAQmx_Val_FootPounds => Ok(PreScaledUnits::PoundFeet),
+            DAQmx_Val_FromTEDS => Ok(PreScaledUnits::FromTEDS),
+            _ => Err(DaqmxError::UnexpectedValue(
                 "DAQmx Units".to_string(),
                 value,
             )),
