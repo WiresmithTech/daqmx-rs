@@ -1,76 +1,53 @@
 mod ai_channels;
+mod properties;
 
 pub use ai_channels::*;
 
-use crate::daqmx_call;
-use crate::error::{handle_error, string_property_size_error, DaqmxError, Result};
-use std::ffi::CStr;
-use std::os::raw::{c_char, c_void};
+use std::ffi::{CStr, CString};
+use std::marker::PhantomData;
+use ni_daqmx_sys::TaskHandle;
 
-trait Channel {
-    fn raw_handle(&self) -> *mut c_void;
-    fn name(&self) -> &CStr;
+/// Represents a channel in a task.
+///
+/// The kind sets the available properties of the channel.
+pub struct TaskChannel<K> {
+    task: TaskHandle,
+    name: CString,
+    _kind: PhantomData<K>,
+}
 
-    ///Read a channel property as a string, given a raw DAQmx Function.
-    fn read_channel_property_string(
-        &self,
-        daqmx_fn: unsafe extern "C" fn(
-            ni_daqmx_sys::TaskHandle,
-            *const c_char,
-            *mut c_char,
-            u32,
-        ) -> i32,
-    ) -> Result<String> {
-        let return_value = unsafe {
-            daqmx_fn(
-                self.raw_handle(),
-                self.name().as_ptr(),
-                std::ptr::null_mut(),
-                0,
-            )
-        };
 
-        if return_value < 0 {
-            handle_error(return_value)?;
-        }
-
-        let buffer_size = return_value as u32;
-
-        let mut buffer = vec![0u8; return_value as usize];
-
-        let return_value = unsafe {
-            daqmx_fn(
-                self.raw_handle(),
-                self.name().as_ptr(),
-                buffer.as_mut_ptr() as *mut c_char,
-                buffer_size,
-            )
-        };
-
-        let should_retry = string_property_size_error(return_value)?;
-
-        if should_retry {
-            // Just error for now - will review retries in the future.
-            return Err(DaqmxError::StringPropertyLengthChanged);
-        }
-
-        //pop the null off.
-        buffer.pop();
-        return Ok(String::from_utf8(buffer)?);
+impl <K> TaskChannel<K> {
+    
+    pub(crate) fn new(task: TaskHandle, name: &str) -> Result<TaskChannel<K>, DaqmxError> {
+        Ok(TaskChannel {
+            task,
+            name: CString::new(name)?,
+            _kind: PhantomData,
+        })
     }
 
-    fn read_channel_property<T: Default + Copy>(
-        &self,
-        daqmx_fn: unsafe extern "C" fn(ni_daqmx_sys::TaskHandle, *const c_char, *mut T) -> i32,
-    ) -> Result<T> {
-        let mut value: T = T::default();
-
-        daqmx_call!(daqmx_fn(
-            self.raw_handle(),
-            self.name().as_ptr(),
-            &mut value
-        ))?;
-
-        Ok(value)
+    fn task(&self) -> TaskHandle {
+        self.task
+    }
+    
+    fn name(&self) -> &CStr {
+        &self.name
     }
 }
+macro_rules! property {
+    (get $name:ident: $ty:ty = $getter:path) => {
+        pub fn $name(&self) -> Result<$ty> { self.property_get($getter) }
+    };
+    (get_set $name:ident / $set:ident : $ty:ty = $getter:path, $setter:path) => {
+        pub fn $name(&self) -> Result<$ty> { self.property_get($getter) }
+        pub fn $set(&self, value: $ty) -> Result<()> { self.property_set($setter, value) }
+    };
+    (get_string $name:ident = $getter:path) => {
+        pub fn $name(&self) -> Result<String> { self.property_get_string($getter) }
+    };
+}
+
+pub(crate) use property;
+use crate::error::DaqmxError;
+use crate::tasks::{AnalogInput, Task};

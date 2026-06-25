@@ -1,6 +1,6 @@
-use crate::channels::{AnalogInputChannel, AnalogInputChannelBuilder};
+use crate::channels::{ AnalogInputChannelBuilder, AnalogInputKind, TaskChannel};
 use crate::daqmx_call;
-use crate::error::{handle_error, Result};
+use crate::error::{ Result};
 use crate::types::Timeout;
 use std::ptr;
 
@@ -12,8 +12,8 @@ impl Task<AnalogInput> {
         builder.add_to_task(self.raw_handle())
     }
 
-    pub fn get_channel<C: AnalogInputChannel>(&self, name: &str) -> Result<C> {
-        C::new(self.clone(), name)
+    pub fn get_channel<K: AnalogInputKind>(&self, name: &str) -> Result<TaskChannel<K>> {
+        TaskChannel::new(self.raw_handle(), name)
     }
 }
 

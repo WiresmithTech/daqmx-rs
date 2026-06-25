@@ -7,6 +7,6 @@ pub mod types;
 #[macro_export]
 macro_rules! daqmx_call {
     ($l:expr) => {
-        handle_error(unsafe { $l })
+        crate::error::handle_error(unsafe { $l })
     };
 }

@@ -3,6 +3,7 @@
 use std::ffi::CString;
 
 use daqmx::channels::*;
+use daqmx::channels::voltage::{Voltage, VoltageChannelBuilder, VoltageScale};
 use daqmx::scales::LinearScale;
 use daqmx::scales::PreScaledUnits;
 use daqmx::tasks::*;
@@ -96,7 +97,7 @@ fn test_voltage_input_builder() {
     let mut task = Task::new("").unwrap();
     task.create_channel(ch1).unwrap();
 
-    let configured: VoltageInputChannel = task.get_channel("my name").unwrap();
+    let configured: TaskChannel<Voltage> = task.get_channel("my name").unwrap();
     assert_eq!(
         configured.physical_channel().unwrap(),
         "PXI1Slot2/ai1".to_owned()
@@ -104,7 +105,7 @@ fn test_voltage_input_builder() {
     assert_eq!(configured.ai_max().unwrap(), 10.0);
     assert_eq!(configured.ai_min().unwrap(), -10.0);
     assert_eq!(
-        configured.ai_terminal_config().unwrap(),
+        configured.terminal_config().unwrap(),
         AnalogTerminalConfig::RSE
     );
     assert_eq!(configured.scale().unwrap(), VoltageScale::Volts);
@@ -124,7 +125,7 @@ fn test_voltage_input_builder_custom_scale() {
     let mut task = Task::new("").unwrap();
     task.create_channel(ch1).unwrap();
 
-    let configured: VoltageInputChannel = task.get_channel("my name").unwrap();
+    let configured: TaskChannel<Voltage> = task.get_channel("my name").unwrap();
 
     assert_eq!(
         configured.scale().unwrap(),
