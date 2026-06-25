@@ -1,5 +1,5 @@
 use crate::daqmx_call;
-use crate::error::{handle_error, Result};
+use crate::error::{Result, handle_error};
 use crate::types::*;
 use ni_daqmx_sys::DAQmxGetTaskName;
 /// Provides a wrapper and functions for the DAQmx Task

@@ -1,13 +1,15 @@
+pub mod current;
+pub mod resistance;
+mod temperature;
 pub mod voltage;
 
-
-
-use ni_daqmx_sys::*;
+use super::properties::PropertyValue;
+use super::{ChannelBuilder, ChannelKind, TaskChannel, property};
 use crate::error::{DaqmxError, Result};
-use super::{TaskChannel, property};
-use super::properties::{PropertyValue};
+use ni_daqmx_sys::*;
+use std::ffi::CStr;
 
-pub trait AnalogInputKind {}
+pub trait AnalogInputKind: ChannelKind {}
 
 impl<K: AnalogInputKind> TaskChannel<K> {
     property!(get_string physical_channel = ni_daqmx_sys::DAQmxGetPhysicalChanName);
@@ -17,11 +19,14 @@ impl<K: AnalogInputKind> TaskChannel<K> {
               AnalogTerminalConfig = DAQmxGetAITermCfg, DAQmxSetAITermCfg);
     property!(get_string custom_scale_name = ni_daqmx_sys::DAQmxGetAICustomScaleName);
 
+    pub fn set_custom_scale_name(&self, name: &CStr) -> Result<()> {
+        self.property_set_raw(DAQmxSetAICustomScaleName, name.as_ptr())
+    }
 
+    pub fn reset_custom_scale_name(&self) -> Result<()> {
+        self.property_reset(DAQmxResetAICustomScaleName)
+    }
 }
-
-
-
 
 #[repr(i32)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -49,17 +54,14 @@ impl PropertyValue for AnalogTerminalConfig {
     type Raw = i32;
 
     fn from_raw(value: i32) -> Result<Self> {
-        //The if statements look wierd but seemed like the best way for the type conversion to be combined.
+        #[allow(non_upper_case_globals)]
         match value {
             DAQmx_Val_Cfg_Default => Ok(Self::Default),
             DAQmx_Val_RSE => Ok(Self::RSE),
             DAQmx_Val_NRSE => Ok(Self::NRSE),
             DAQmx_Val_Diff => Ok(Self::Differential),
             DAQmx_Val_PseudoDiff => Ok(Self::PseudoDifferential),
-            _ => Err(DaqmxError::UnexpectedValue(
-                "AnalogTerminalConfig".to_string(),
-                value,
-            )),
+            _ => Err(DaqmxError::UnexpectedValue("AnalogTerminalConfig", value)),
         }
     }
 
@@ -74,11 +76,7 @@ impl PropertyValue for AnalogTerminalConfig {
     }
 }
 
-
-pub trait ChannelBuilder {
-    fn add_to_task(self, task: TaskHandle) -> Result<()>;
+pub trait AnalogChannelBuilder: ChannelBuilder {
+    fn max(self, max: f64) -> Self;
+    fn min(self, min: f64) -> Self;
 }
-
-/// Marker trait for Analog Input channel builders so the task can adapt to the type.
-pub trait AnalogInputChannelBuilder: ChannelBuilder {}
-

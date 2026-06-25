@@ -1,13 +1,15 @@
 //! Integration tests for covering the analog input tasks and channels.
 //!
-use std::ffi::CString;
-
+use daqmx::channels::ai_channels::voltage::{Voltage, VoltageChannelBuilder, VoltageScale};
+use daqmx::channels::ai_channels::AnalogChannelBuilder;
 use daqmx::channels::*;
-use daqmx::channels::voltage::{Voltage, VoltageChannelBuilder, VoltageScale};
 use daqmx::scales::LinearScale;
 use daqmx::scales::PreScaledUnits;
 use daqmx::tasks::*;
 use daqmx::types::*;
+use std::ffi::CString;
+use std::sync::Arc;
+use daqmx::channels::ai_channels::AnalogTerminalConfig;
 
 #[test]
 fn test_scalar_read() {
@@ -87,12 +89,14 @@ fn test_stop() {
 
 #[test]
 fn test_voltage_input_builder() {
-    let mut ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai1").unwrap();
-    ch1.name("my name").unwrap();
-    ch1.scale = VoltageScale::Volts;
-    ch1.max = 10.0;
-    ch1.min = -10.0;
-    ch1.terminal_config = AnalogTerminalConfig::RSE;
+    let ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai1")
+        .unwrap()
+        .name("my name")
+        .unwrap()
+        .scale(VoltageScale::Volts)
+        .max(10.0)
+        .min(-10.0)
+        .terminal_config(AnalogTerminalConfig::RSE);
 
     let mut task = Task::new("").unwrap();
     task.create_channel(ch1).unwrap();
@@ -114,13 +118,15 @@ fn test_voltage_input_builder() {
 #[test]
 fn test_voltage_input_builder_custom_scale() {
     //create custom scale first.
-    let scale = LinearScale::new("TestScale", 1.0, 0.0, PreScaledUnits::Volts, "test").unwrap();
-    let mut ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai1").unwrap();
-    ch1.name("my name").unwrap();
-    ch1.scale = VoltageScale::CustomScale(Some(CString::new("TestScale").expect("Name Error")));
-    ch1.max = 10.0;
-    ch1.min = -10.0;
-    ch1.terminal_config = AnalogTerminalConfig::RSE;
+    let _scale = LinearScale::new("TestScale", 1.0, 0.0, PreScaledUnits::Volts, "test").unwrap();
+    let ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai1")
+        .unwrap()
+        .name("my name")
+        .unwrap()
+        .scale(VoltageScale::new_custom("TestScale").unwrap())
+        .max(10.0)
+        .min(-10.0)
+        .terminal_config(AnalogTerminalConfig::RSE);
 
     let mut task = Task::new("").unwrap();
     task.create_channel(ch1).unwrap();
@@ -129,6 +135,8 @@ fn test_voltage_input_builder_custom_scale() {
 
     assert_eq!(
         configured.scale().unwrap(),
-        VoltageScale::CustomScale(Some(CString::new("TestScale").expect("Name Error")))
+        VoltageScale::CustomScale(Some(Arc::new(
+            CString::new("TestScale").expect("Name Error")
+        )))
     );
 }

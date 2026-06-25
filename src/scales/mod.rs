@@ -90,7 +90,8 @@ impl TryFrom<i32> for PreScaledUnits {
     type Error = DaqmxError;
 
     fn try_from(value: i32) -> std::result::Result<Self, Self::Error> {
-        match  value {
+        #[allow(non_upper_case_globals)]
+        match value {
             DAQmx_Val_Volts => Ok(PreScaledUnits::Volts),
             DAQmx_Val_Amps => Ok(PreScaledUnits::Amps),
             DAQmx_Val_DegF => Ok(PreScaledUnits::DegreesFarenheit),
@@ -119,10 +120,7 @@ impl TryFrom<i32> for PreScaledUnits {
             DAQmx_Val_InchPounds => Ok(PreScaledUnits::PoundInches),
             DAQmx_Val_FootPounds => Ok(PreScaledUnits::PoundFeet),
             DAQmx_Val_FromTEDS => Ok(PreScaledUnits::FromTEDS),
-            _ => Err(DaqmxError::UnexpectedValue(
-                "DAQmx Units".to_string(),
-                value,
-            )),
+            _ => Err(DaqmxError::UnexpectedValue("DAQmx Units", value)),
         }
     }
 }

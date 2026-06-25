@@ -1,19 +1,25 @@
-use crate::channels::{ AnalogInputChannelBuilder, AnalogInputKind, TaskChannel};
+use crate::channels::{ChannelBuilder, TaskChannel};
 use crate::daqmx_call;
-use crate::error::{ Result};
+use crate::error::Result;
 use crate::types::Timeout;
+use std::ffi::CString;
 use std::ptr;
-
+use crate::channels::ai_channels::AnalogInputKind;
 use super::input::{DAQmxInput, InputTask};
-use super::{task::AnalogInput, Task};
+use super::{Task, task::AnalogInput};
 
 impl Task<AnalogInput> {
-    pub fn create_channel<B: AnalogInputChannelBuilder>(&mut self, builder: B) -> Result<()> {
+    pub fn create_channel<K: AnalogInputKind, B: ChannelBuilder<Kind = K>>(
+        &mut self,
+        builder: B,
+    ) -> Result<TaskChannel<K>> {
         builder.add_to_task(self.raw_handle())
     }
 
     pub fn get_channel<K: AnalogInputKind>(&self, name: &str) -> Result<TaskChannel<K>> {
-        TaskChannel::new(self.raw_handle(), name)
+        //todo: Check the channel exists and it is the correct type.
+        let name = CString::new(name)?;
+        Ok(TaskChannel::new(self.raw_handle(), name))
     }
 }
 

@@ -11,12 +11,16 @@ pub enum DaqmxError {
     DaqmxError(i32, String),
     #[error("String Value Not Valid for DAQmx API. Probably Contains Null")]
     CStringError(#[from] std::ffi::NulError),
-    #[error("String value from DAQmx API does not contain valid Unicode (UTF8). This should not be possible and probably indicates corruption")]
+    #[error(
+        "String value from DAQmx API does not contain valid Unicode (UTF8). This should not be possible and probably indicates corruption"
+    )]
     Utf8Error(#[from] std::string::FromUtf8Error),
-    #[error("String property length changed between reading the required length and reading the value. This is likely a race condition with another piece of code and a retry will probably correct this.")]
+    #[error(
+        "String property length changed between reading the required length and reading the value. This is likely a race condition with another piece of code and a retry will probably correct this."
+    )]
     StringPropertyLengthChanged,
     #[error("Value for given type ({0}) isn't a value that is expected: {1}")]
-    UnexpectedValue(String, i32),
+    UnexpectedValue(&'static str, i32),
 }
 
 pub type Result<T> = std::result::Result<T, DaqmxError>;

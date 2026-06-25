@@ -5,7 +5,7 @@
 use ni_daqmx_sys::bool32;
 
 use crate::daqmx_call;
-use crate::error::{handle_error, Result};
+use crate::error::Result;
 use crate::types::{DataFillMode, Timeout};
 
 pub trait InputTask<T>: DAQmxInput<T> {
