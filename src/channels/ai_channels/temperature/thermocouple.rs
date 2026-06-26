@@ -5,6 +5,7 @@ use crate::daqmx_call;
 use crate::error::DaqmxError;
 use ni_daqmx_sys::*;
 use std::ffi::CString;
+use crate::channels::ai_channels::AnalogChannelBuilder;
 
 pub struct Thermocouple;
 
@@ -188,5 +189,29 @@ impl ChannelBuilder for ThermocoupleBuilder {
             channel
         ))?;
         Ok(TaskChannel::new(task, expected_name))
+    }
+}
+
+impl AnalogChannelBuilder for ThermocoupleBuilder {
+    fn max(self, max: f64) -> Self {
+        Self { max, ..self }
+    }
+
+    fn min(self, min: f64) -> Self {
+        Self { min, ..self }
+    }
+}
+
+impl ThermocoupleBuilder {
+    pub fn thermocouple_type(self, thermocouple_type: ThermocoupleType) -> Self {
+        Self { thermocouple_type, ..self }
+    }
+
+    pub fn units(self, units: TemperatureUnits) -> Self {
+        Self { units, ..self }
+    }
+
+    pub fn cjc_source(self, cjc_source: CjcSource) -> Self {
+        Self { cjc_source, ..self }
     }
 }
