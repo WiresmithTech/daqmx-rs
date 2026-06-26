@@ -252,6 +252,8 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 [[package]]
 name = "ni-daqmx-sys"
 version = "26.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64dc4d3c459e8df5b3191c7ef7dc8da028e67b2419a690c4245972416cc4cd5f"
 dependencies = [
  "bindgen",
 ]

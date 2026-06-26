@@ -83,5 +83,4 @@ pub trait ChannelBuilder: Sized {
     fn add_to_task(self, task: TaskHandle) -> crate::error::Result<TaskChannel<Self::Kind>>;
 }
 
-use crate::error::DaqmxError;
 pub(crate) use property;

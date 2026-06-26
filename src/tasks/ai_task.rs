@@ -46,15 +46,17 @@ impl DAQmxInput<f64> for Task<AnalogInput> {
         buffer_size: u32,
         actual_samples_per_channel: *mut i32,
     ) -> i32 {
-        ni_daqmx_sys::DAQmxReadAnalogF64(
-            self.raw_handle(),
-            samples_per_channel,
-            timeout,
-            fill_mode,
-            buffer,
-            buffer_size,
-            actual_samples_per_channel,
-            ptr::null_mut(),
-        )
+        unsafe {
+            ni_daqmx_sys::DAQmxReadAnalogF64(
+                self.raw_handle(),
+                samples_per_channel,
+                timeout,
+                fill_mode,
+                buffer,
+                buffer_size,
+                actual_samples_per_channel,
+                ptr::null_mut(),
+            )
+        }
     }
 }

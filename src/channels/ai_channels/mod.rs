@@ -1,6 +1,6 @@
 pub mod current;
 pub mod resistance;
-mod temperature;
+pub mod temperature;
 pub mod voltage;
 
 use super::properties::PropertyValue;
