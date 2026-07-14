@@ -153,7 +153,7 @@ impl ChannelBuilder for RTDBuilder {
             min: 0.0,
             units: TemperatureUnits::Celsius,
             rtd_type: RTDType::Pt3750,
-            current_source: ExcitationSource::External,
+            current_source: ExcitationSource::Internal,
             current_value: 0.0025,
             r0: 100.0,
             wire_configuration: WireConfiguration::TwoWire,
