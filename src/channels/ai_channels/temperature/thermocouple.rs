@@ -1,11 +1,12 @@
+use crate::channels::ai_channels::AnalogChannelBuilder;
 use crate::channels::ai_channels::temperature::{TemperatureInputKind, TemperatureUnits};
-use crate::channels::properties::{ChannelName, PropertyValue};
+use crate::channels::properties::ChannelName;
 use crate::channels::{AnalogInputKind, ChannelBuilder, ChannelKind, TaskChannel, property};
-use crate::{ai_custom_scale, daqmx_call};
 use crate::error::DaqmxError;
+use crate::properties::PropertyValue;
+use crate::{ai_custom_scale, daqmx_call};
 use ni_daqmx_sys::*;
 use std::ffi::CString;
-use crate::channels::ai_channels::AnalogChannelBuilder;
 
 pub struct Thermocouple;
 
@@ -204,7 +205,10 @@ impl AnalogChannelBuilder for ThermocoupleBuilder {
 
 impl ThermocoupleBuilder {
     pub fn thermocouple_type(self, thermocouple_type: ThermocoupleType) -> Self {
-        Self { thermocouple_type, ..self }
+        Self {
+            thermocouple_type,
+            ..self
+        }
     }
 
     pub fn units(self, units: TemperatureUnits) -> Self {

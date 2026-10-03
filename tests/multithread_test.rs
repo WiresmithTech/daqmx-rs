@@ -1,8 +1,8 @@
 //! Integration tests to confirm multithreaded behaviour.
 //!
 
-use daqmx::channels::ai_channels::voltage::VoltageChannelBuilder;
 use daqmx::channels::ChannelBuilder;
+use daqmx::channels::ai_channels::voltage::VoltageChannelBuilder;
 use daqmx::tasks::*;
 use daqmx::types::*;
 

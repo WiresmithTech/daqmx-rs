@@ -1,13 +1,16 @@
-use std::ffi::CString;
-use std::sync::Arc;
-use ni_daqmx_sys::{DAQmxGetAOCurrentUnits, DAQmxSetAOCurrentUnits, DAQmx_Val_FromCustomScale, DAQmx_Val_Amps};
-use crate::channels::{AnalogOutputKind, ChannelBuilder, ChannelKind, TaskChannel};
+use crate::ao_custom_scale;
 use crate::channels::ai_channels::AnalogChannelBuilder;
-use crate::channels::properties::{ChannelName, PropertyValue};
+use crate::channels::properties::ChannelName;
+use crate::channels::{AnalogOutputKind, ChannelBuilder, ChannelKind, TaskChannel};
 use crate::daqmx_call;
 use crate::error::DaqmxError;
+use crate::properties::PropertyValue;
 use crate::scales::PreScaledUnits;
-use crate::ao_custom_scale;
+use ni_daqmx_sys::{
+    DAQmx_Val_Amps, DAQmx_Val_FromCustomScale, DAQmxGetAOCurrentUnits, DAQmxSetAOCurrentUnits,
+};
+use std::ffi::CString;
+use std::sync::Arc;
 
 pub struct Current;
 
@@ -116,7 +119,6 @@ impl CurrentOutputChannelBuilder {
     pub fn scale(self, scale: CurrentOutputScale) -> Self {
         Self { scale, ..self }
     }
-
 }
 impl TaskChannel<Current> {
     pub fn scale(&self) -> Result<CurrentOutputScale, DaqmxError> {
@@ -124,9 +126,9 @@ impl TaskChannel<Current> {
 
         if let CurrentOutputScale::CustomScale(_) = scale {
             let name = self.custom_scale_name()?;
-            Ok(CurrentOutputScale::CustomScale(Some(Arc::new(CString::new(
-                name,
-            )?))))
+            Ok(CurrentOutputScale::CustomScale(Some(Arc::new(
+                CString::new(name)?,
+            ))))
         } else {
             Ok(scale)
         }

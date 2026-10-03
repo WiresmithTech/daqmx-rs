@@ -1,15 +1,16 @@
-use crate::channels::properties::{ChannelName, PropertyValue};
-use crate::channels::{
-    AnalogInputKind, ChannelBuilder, ChannelKind,
-    TaskChannel,
-};
-use crate::{ai_custom_scale, daqmx_call};
-use crate::error::DaqmxError;
-use crate::scales::PreScaledUnits;
-use ni_daqmx_sys::{DAQmx_Val_FromCustomScale, DAQmx_Val_FromTEDS, DAQmx_Val_Volts, DAQmxGetAIVoltageUnits, DAQmxSetAIVoltageUnits};
-use std::ffi::{CString};
-use std::sync::Arc;
 use crate::channels::ai_channels::{AnalogChannelBuilder, AnalogTerminalConfig};
+use crate::channels::properties::ChannelName;
+use crate::channels::{AnalogInputKind, ChannelBuilder, ChannelKind, TaskChannel};
+use crate::error::DaqmxError;
+use crate::properties::PropertyValue;
+use crate::scales::PreScaledUnits;
+use crate::{ai_custom_scale, daqmx_call};
+use ni_daqmx_sys::{
+    DAQmx_Val_FromCustomScale, DAQmx_Val_FromTEDS, DAQmx_Val_Volts, DAQmxGetAIVoltageUnits,
+    DAQmxSetAIVoltageUnits,
+};
+use std::ffi::CString;
+use std::sync::Arc;
 
 pub struct Voltage;
 impl ChannelKind for Voltage {}

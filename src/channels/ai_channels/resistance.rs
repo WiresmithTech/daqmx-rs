@@ -1,5 +1,5 @@
-use crate::channels::properties::PropertyValue;
 use crate::error::DaqmxError;
+use crate::properties::PropertyValue;
 use ni_daqmx_sys::*;
 
 /// The excitation source for a resistance channel.

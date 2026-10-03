@@ -1,12 +1,12 @@
+use super::input::{DAQmxInput, InputTask};
+use super::{Task, task::AnalogInput};
+use crate::channels::ai_channels::AnalogInputKind;
 use crate::channels::{ChannelBuilder, TaskChannel};
 use crate::daqmx_call;
 use crate::error::Result;
 use crate::types::Timeout;
 use std::ffi::CString;
 use std::ptr;
-use crate::channels::ai_channels::AnalogInputKind;
-use super::input::{DAQmxInput, InputTask};
-use super::{Task, task::AnalogInput};
 
 impl Task<AnalogInput> {
     pub fn create_channel<K: AnalogInputKind, B: ChannelBuilder<Kind = K>>(

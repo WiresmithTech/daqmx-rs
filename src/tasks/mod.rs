@@ -1,9 +1,10 @@
 mod ai_task;
-mod input;
-mod task;
-mod output;
 mod ao_task;
+mod input;
+mod output;
+mod properties;
+mod task;
 
 pub use input::*;
-pub use task::*;
 pub use output::*;
+pub use task::*;

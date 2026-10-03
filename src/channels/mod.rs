@@ -1,8 +1,9 @@
 pub mod ai_channels;
-mod properties;
 pub mod ao_channels;
+mod properties;
 mod scales;
 
+use crate::property;
 pub use ai_channels::AnalogInputKind;
 pub use ao_channels::AnalogOutputKind;
 use ni_daqmx_sys::TaskHandle;
@@ -38,37 +39,6 @@ impl<K: ChannelKind> TaskChannel<K> {
         &self.name
     }
 }
-macro_rules! property {
-    (get $name:ident: $ty:ty = $getter:path) => {
-        pub fn $name(&self) -> crate::error::Result<$ty> {
-            self.property_get($getter)
-        }
-    };
-    (get_set $name:ident / $set:ident : $ty:ty = $getter:path, $setter:path) => {
-        pub fn $name(&self) -> crate::error::Result<$ty> {
-            self.property_get($getter)
-        }
-        pub fn $set(&self, value: $ty) -> crate::error::Result<()> {
-            self.property_set($setter, value)
-        }
-    };
-    (get_set_reset $name:ident / $set:ident / $reset:ident : $ty:ty = $getter:path, $setter:path, $resetter:path) => {
-        pub fn $name(&self) -> crate::error::Result<$ty> {
-            self.property_get($getter)
-        }
-        pub fn $set(&self, value: $ty) -> crate::error::Result<()> {
-            self.property_set($setter, value)
-        }
-        pub fn $reset(&self) -> crate::error::Result<()> {
-            self.property_reset($resetter)
-        }
-    };
-    (get_string $name:ident = $getter:path) => {
-        pub fn $name(&self) -> crate::error::Result<String> {
-            self.property_get_string($getter)
-        }
-    };
-}
 
 /// A builder pattern for various channel kinds.
 ///
@@ -86,5 +56,3 @@ pub trait ChannelBuilder: Sized {
     fn name<S: Into<Vec<u8>>>(self, name: S) -> crate::error::Result<Self>;
     fn add_to_task(self, task: TaskHandle) -> crate::error::Result<TaskChannel<Self::Kind>>;
 }
-
-pub(crate) use property;

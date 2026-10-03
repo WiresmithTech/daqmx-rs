@@ -1,13 +1,16 @@
-use std::ffi::CString;
-use std::sync::Arc;
-use ni_daqmx_sys::{DAQmxGetAOVoltageUnits, DAQmxSetAOVoltageUnits, DAQmx_Val_FromCustomScale, DAQmx_Val_Volts};
-use crate::channels::{AnalogOutputKind, ChannelBuilder, ChannelKind, TaskChannel};
+use crate::ao_custom_scale;
 use crate::channels::ai_channels::AnalogChannelBuilder;
-use crate::channels::properties::{ChannelName, PropertyValue};
+use crate::channels::properties::ChannelName;
+use crate::channels::{AnalogOutputKind, ChannelBuilder, ChannelKind, TaskChannel};
 use crate::daqmx_call;
 use crate::error::DaqmxError;
+use crate::properties::PropertyValue;
 use crate::scales::PreScaledUnits;
-use crate::ao_custom_scale;
+use ni_daqmx_sys::{
+    DAQmx_Val_FromCustomScale, DAQmx_Val_Volts, DAQmxGetAOVoltageUnits, DAQmxSetAOVoltageUnits,
+};
+use std::ffi::CString;
+use std::sync::Arc;
 
 pub struct Voltage;
 
@@ -116,7 +119,6 @@ impl VoltageOutputChannelBuilder {
     pub fn scale(self, scale: VoltageOutputScale) -> Self {
         Self { scale, ..self }
     }
-
 }
 impl TaskChannel<Voltage> {
     pub fn scale(&self) -> Result<VoltageOutputScale, DaqmxError> {
@@ -124,9 +126,9 @@ impl TaskChannel<Voltage> {
 
         if let VoltageOutputScale::CustomScale(_) = scale {
             let name = self.custom_scale_name()?;
-            Ok(VoltageOutputScale::CustomScale(Some(Arc::new(CString::new(
-                name,
-            )?))))
+            Ok(VoltageOutputScale::CustomScale(Some(Arc::new(
+                CString::new(name)?,
+            ))))
         } else {
             Ok(scale)
         }

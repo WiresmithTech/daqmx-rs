@@ -1,5 +1,6 @@
 pub mod channels;
 pub mod error;
+mod properties;
 pub mod scales;
 pub mod tasks;
 pub mod types;

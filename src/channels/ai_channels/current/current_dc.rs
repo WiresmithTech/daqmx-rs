@@ -1,15 +1,13 @@
-use crate::channels::properties::{ChannelName, PropertyValue};
-use crate::channels::{
-    AnalogInputKind, ChannelBuilder, ChannelKind,
-    TaskChannel,
-};
-use crate::{ai_custom_scale, daqmx_call};
+use crate::channels::ai_channels::{AnalogChannelBuilder, AnalogTerminalConfig};
+use crate::channels::properties::ChannelName;
+use crate::channels::{AnalogInputKind, ChannelBuilder, ChannelKind, TaskChannel};
 use crate::error::DaqmxError;
+use crate::properties::PropertyValue;
+use crate::{ai_custom_scale, daqmx_call};
 use ni_daqmx_sys::*;
 use std::ffi::CString;
 use std::str::FromStr;
 use std::sync::Arc;
-use crate::channels::ai_channels::{AnalogChannelBuilder, AnalogTerminalConfig};
 
 pub struct CurrentChannel;
 

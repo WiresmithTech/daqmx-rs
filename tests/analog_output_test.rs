@@ -1,7 +1,9 @@
 //! Integration tests for covering the analog input tasks and channels.
 //!
-use daqmx::channels::ao_channels::voltage::{Voltage, VoltageOutputChannelBuilder, VoltageOutputScale};
 use daqmx::channels::ai_channels::AnalogChannelBuilder;
+use daqmx::channels::ao_channels::voltage::{
+    Voltage, VoltageOutputChannelBuilder, VoltageOutputScale,
+};
 use daqmx::channels::*;
 use daqmx::scales::LinearScale;
 use daqmx::scales::PreScaledUnits;
@@ -18,7 +20,6 @@ fn test_scalar_read() {
     let _ = task.write_scalar(Timeout::WaitForever, true, 2.0).unwrap();
     drop(task);
 }
-
 
 #[test]
 fn test_buffered_write() {
@@ -38,11 +39,27 @@ fn test_buffered_write() {
 
     task.write(
         Timeout::Seconds(1.0),
-        true,
+        false,
         DataFillMode::GroupByChannel,
         buffer.len(),
         &mut buffer[..],
-    ).unwrap();
+    )
+    .unwrap();
+
+    task.set_regeneration_mode(RegenerationMode::Allowed)
+        .unwrap();
+    assert_eq!(task.regeneration_mode().unwrap(), RegenerationMode::Allowed);
+    task.set_write_relative_to(WriteRelativeTo::CurrentWritePosition)
+        .unwrap();
+    assert_eq!(
+        task.write_relative_to().unwrap(),
+        WriteRelativeTo::CurrentWritePosition
+    );
+    task.set_offset(2).unwrap();
+    assert_eq!(task.offset().unwrap(), 2);
+
+    task.start().unwrap();
+    task.stop().unwrap();
 }
 
 #[test]
@@ -61,14 +78,14 @@ fn test_stop() {
 
     let mut buffer = [0.0; 100];
 
-
     task.write(
         Timeout::Seconds(1.0),
         true,
         DataFillMode::GroupByChannel,
         buffer.len(),
         &mut buffer[..],
-    ).unwrap();
+    )
+    .unwrap();
 
     //now stop and confirm next write fails.
     task.stop().unwrap();
@@ -77,12 +94,17 @@ fn test_stop() {
         false,
         DataFillMode::GroupByChannel,
         buffer.len(),
-        &mut buffer[..]);
+        &mut buffer[..],
+    );
 
-    assert!(matches!(
-        write_result,
-        Err(daqmx::error::DaqmxError::DaqmxError(-200288, _))
-    ), "{:?}", write_result);
+    assert!(
+        matches!(
+            write_result,
+            Err(daqmx::error::DaqmxError::DaqmxError(-200288, _))
+        ),
+        "{:?}",
+        write_result
+    );
 }
 
 #[test]

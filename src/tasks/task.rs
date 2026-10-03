@@ -163,7 +163,6 @@ impl<TYPE> Task<TYPE> {
         ))?;
         Ok(value != 0)
     }
-
 }
 
 impl Task<AnalogInput> {
@@ -179,5 +178,4 @@ impl Task<AnalogInput> {
         ))?;
         Ok(())
     }
-    
 }

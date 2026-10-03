@@ -1,7 +1,8 @@
 //! Integration tests for covering the analog input tasks and channels.
 //!
-use daqmx::channels::ai_channels::voltage::{Voltage, VoltageChannelBuilder, VoltageScale};
 use daqmx::channels::ai_channels::AnalogChannelBuilder;
+use daqmx::channels::ai_channels::AnalogTerminalConfig;
+use daqmx::channels::ai_channels::voltage::{Voltage, VoltageChannelBuilder, VoltageScale};
 use daqmx::channels::*;
 use daqmx::scales::LinearScale;
 use daqmx::scales::PreScaledUnits;
@@ -9,7 +10,6 @@ use daqmx::tasks::*;
 use daqmx::types::*;
 use std::ffi::CString;
 use std::sync::Arc;
-use daqmx::channels::ai_channels::AnalogTerminalConfig;
 
 #[test]
 fn test_scalar_read() {
@@ -95,7 +95,6 @@ fn test_voltage_input_builder() {
         .unwrap()
         .scale(VoltageScale::Volts)
         .max(10.0)
-
         .min(-10.0)
         .terminal_config(AnalogTerminalConfig::RSE);
 

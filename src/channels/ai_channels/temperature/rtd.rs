@@ -1,14 +1,13 @@
-use crate::channels::ai_channels::temperature::{TemperatureInputKind, TemperatureUnits};
-use crate::channels::properties::{ChannelName, PropertyValue};
-use crate::channels::{
-    AnalogInputKind, ChannelBuilder, ChannelKind, TaskChannel, property,
-};
-use crate::{ai_custom_scale, daqmx_call};
-use crate::error::DaqmxError;
-use ni_daqmx_sys::*;
-use std::ffi::CString;
 use crate::channels::ai_channels::AnalogChannelBuilder;
 use crate::channels::ai_channels::resistance::{ExcitationSource, WireConfiguration};
+use crate::channels::ai_channels::temperature::{TemperatureInputKind, TemperatureUnits};
+use crate::channels::properties::ChannelName;
+use crate::channels::{AnalogInputKind, ChannelBuilder, ChannelKind, TaskChannel, property};
+use crate::error::DaqmxError;
+use crate::properties::PropertyValue;
+use crate::{ai_custom_scale, daqmx_call};
+use ni_daqmx_sys::*;
+use std::ffi::CString;
 
 pub struct Rtd {}
 
@@ -41,9 +40,9 @@ impl TaskChannel<Rtd> {
         let daqmx_type: DaqmxRTDType = (&rtd_type).into();
         self.property_set(DAQmxSetAIRTDType, daqmx_type)?;
         if let RTDType::Custom { a, b, c } = rtd_type {
-                self.property_set(DAQmxSetAIRTDA, a)?;
-                self.property_set(DAQmxSetAIRTDB, b)?;
-                self.property_set(DAQmxSetAIRTDC, c)?;
+            self.property_set(DAQmxSetAIRTDA, a)?;
+            self.property_set(DAQmxSetAIRTDB, b)?;
+            self.property_set(DAQmxSetAIRTDC, c)?;
         }
         Ok(())
     }

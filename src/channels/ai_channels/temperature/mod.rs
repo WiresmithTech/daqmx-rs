@@ -1,12 +1,13 @@
 pub mod rtd;
 mod thermocouple;
 
-use crate::channels::properties::PropertyValue;
 use crate::channels::{AnalogInputKind, TaskChannel, property};
 use crate::error::DaqmxError;
+use crate::properties::PropertyValue;
 use ni_daqmx_sys::*;
 pub use rtd::*;
 pub use thermocouple::*;
+
 pub trait TemperatureInputKind: AnalogInputKind {}
 
 impl<K: TemperatureInputKind> TaskChannel<K> {

@@ -3,12 +3,10 @@ pub mod resistance;
 pub mod temperature;
 pub mod voltage;
 
-use super::properties::PropertyValue;
 use super::{ChannelBuilder, ChannelKind, TaskChannel, property};
 use crate::error::{DaqmxError, Result};
+use crate::properties::PropertyValue;
 use ni_daqmx_sys::*;
-use std::ffi::{c_char, CStr};
-use crate::channels::scales::CustomScaledChannel;
 
 pub trait AnalogInputKind: ChannelKind {}
 
@@ -19,15 +17,12 @@ impl<K: AnalogInputKind> TaskChannel<K> {
               AnalogTerminalConfig = DAQmxGetAITermCfg, DAQmxSetAITermCfg);
     property!(get_set_reset coupling / set_coupling / reset_coupling : AnalogCoupling = DAQmxGetAICoupling, DAQmxSetAICoupling, DAQmxResetAICoupling);
 
-
     // Advanced ADC Section
     property!(get_set_reset adc_timing_mode / set_adc_timing_mode / reset_adc_timing_mode : AdcTimingMode = DAQmxGetAIADCTimingMode, DAQmxSetAIADCTimingMode, DAQmxResetAIADCTimingMode);
     property!(get_set_reset adc_custom_timing_mode / set_adc_custom_timing_mode / reset_adc_custom_timing_mode : u32 = DAQmxGetAIADCCustomTimingMode, DAQmxSetAIADCCustomTimingMode, DAQmxResetAIADCCustomTimingMode);
     property!(get resolution: f64 = DAQmxGetAIResolution);
     property!(get resolution_units: AIResolutionUnits = DAQmxGetAIResolutionUnits);
     property!(get raw_sample_size: u32 = DAQmxGetAIRawSampSize);
-
-
 }
 
 #[repr(i32)]
@@ -161,7 +156,6 @@ impl PropertyValue for AdcTimingMode {
     }
 }
 
-
 #[repr(i32)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 /// The units used when reading the AI resolution.
@@ -173,10 +167,10 @@ impl PropertyValue for AIResolutionUnits {
     type Raw = i32;
 
     fn from_raw(raw: Self::Raw) -> std::result::Result<Self, DaqmxError> {
-       match raw {
-           DAQmx_Val_Bits => Ok(Self::Bits),
-           _ => Err(DaqmxError::UnexpectedValue("AI Resolution Units", raw)),
-       }
+        match raw {
+            DAQmx_Val_Bits => Ok(Self::Bits),
+            _ => Err(DaqmxError::UnexpectedValue("AI Resolution Units", raw)),
+        }
     }
 
     fn into_raw(self) -> Self::Raw {
@@ -197,13 +191,23 @@ pub trait AnalogChannelBuilder: ChannelBuilder {
 #[macro_export]
 macro_rules! ai_custom_scale {
     ($channel_kind:ty) => {
-        use std::ffi::c_char;
-        use ni_daqmx_sys::{int32, uInt32, TaskHandle};
         use crate::channels::scales::CustomScaledChannel;
+        use ni_daqmx_sys::{TaskHandle, int32, uInt32};
+        use std::ffi::c_char;
         impl CustomScaledChannel for $channel_kind {
-            const GET_NAME: unsafe extern "C" fn(TaskHandle, *const c_char, *mut c_char, uInt32) -> int32 = ni_daqmx_sys::DAQmxGetAICustomScaleName;
-            const SET_NAME: unsafe extern "C" fn(TaskHandle, *const c_char, *const c_char) -> int32 = ni_daqmx_sys::DAQmxSetAICustomScaleName;
-            const RESET_NAME: unsafe extern "C" fn(TaskHandle, *const c_char) -> int32 = ni_daqmx_sys::DAQmxResetAICustomScaleName;
+            const GET_NAME: unsafe extern "C" fn(
+                TaskHandle,
+                *const c_char,
+                *mut c_char,
+                uInt32,
+            ) -> int32 = ni_daqmx_sys::DAQmxGetAICustomScaleName;
+            const SET_NAME: unsafe extern "C" fn(
+                TaskHandle,
+                *const c_char,
+                *const c_char,
+            ) -> int32 = ni_daqmx_sys::DAQmxSetAICustomScaleName;
+            const RESET_NAME: unsafe extern "C" fn(TaskHandle, *const c_char) -> int32 =
+                ni_daqmx_sys::DAQmxResetAICustomScaleName;
         }
     };
 }
