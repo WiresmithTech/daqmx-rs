@@ -1,6 +1,6 @@
 //! Integration tests for covering the analog input tasks and channels.
 //!
-use daqmx::channels::ai_channels::voltage::{Voltage, VoltageChannelBuilder, VoltageScale};
+use daqmx::channels::ao_channels::voltage::{Voltage, VoltageOutputChannelBuilder, VoltageOutputScale};
 use daqmx::channels::ai_channels::AnalogChannelBuilder;
 use daqmx::channels::*;
 use daqmx::scales::LinearScale;
@@ -9,21 +9,21 @@ use daqmx::tasks::*;
 use daqmx::types::*;
 use std::ffi::CString;
 use std::sync::Arc;
-use daqmx::channels::ai_channels::AnalogTerminalConfig;
 
 #[test]
 fn test_scalar_read() {
-    let mut task = Task::<AnalogInput>::new("scalar_read").unwrap();
-    let ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai0").unwrap();
+    let mut task = Task::<AnalogOutput>::new("scalar").unwrap();
+    let ch1 = VoltageOutputChannelBuilder::new("PXI1Slot2/ao0").unwrap();
     task.create_channel(ch1).unwrap();
-    let _ = task.read_scalar(Timeout::Seconds(1.0)).unwrap();
+    let _ = task.write_scalar(Timeout::WaitForever, true, 2.0).unwrap();
     drop(task);
 }
 
+
 #[test]
-fn test_buffered_read() {
-    let mut task = Task::<AnalogInput>::new("buffered_read").unwrap();
-    let ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai0").unwrap();
+fn test_buffered_write() {
+    let mut task = Task::<AnalogOutput>::new("buffered").unwrap();
+    let ch1 = VoltageOutputChannelBuilder::new("PXI1Slot2/ao0").unwrap();
     task.create_channel(ch1).unwrap();
     task.configure_sample_clock_timing(
         None,
@@ -36,20 +36,19 @@ fn test_buffered_read() {
 
     let mut buffer = [0.0; 100];
 
-    task.start().unwrap();
-    task.read(
+    task.write(
         Timeout::Seconds(1.0),
+        true,
         DataFillMode::GroupByChannel,
-        Some(100),
+        buffer.len(),
         &mut buffer[..],
-    )
-    .unwrap();
+    ).unwrap();
 }
 
 #[test]
 fn test_stop() {
-    let mut task = Task::<AnalogInput>::new("input_stop").unwrap();
-    let ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai0").unwrap();
+    let mut task = Task::<AnalogOutput>::new("scalar").unwrap();
+    let ch1 = VoltageOutputChannelBuilder::new("PXI1Slot2/ao0").unwrap();
     task.create_channel(ch1).unwrap();
     task.configure_sample_clock_timing(
         None,
@@ -62,81 +61,73 @@ fn test_stop() {
 
     let mut buffer = [0.0; 100];
 
-    task.set_read_auto_start(false).unwrap();
-    task.start().unwrap();
-    task.read(
-        Timeout::Seconds(1.0),
-        DataFillMode::GroupByChannel,
-        Some(100),
-        &mut buffer[..],
-    )
-    .unwrap();
 
-    //now stop and confirm read response.
-    task.stop().unwrap();
-    let read_result = task.read(
+    task.write(
         Timeout::Seconds(1.0),
+        true,
         DataFillMode::GroupByChannel,
-        Some(100),
+        buffer.len(),
         &mut buffer[..],
-    );
+    ).unwrap();
+
+    //now stop and confirm next write fails.
+    task.stop().unwrap();
+    let write_result = task.write(
+        Timeout::Seconds(1.0),
+        false,
+        DataFillMode::GroupByChannel,
+        buffer.len(),
+        &mut buffer[..]);
 
     assert!(matches!(
-        read_result,
-        Err(daqmx::error::DaqmxError::DaqmxError(-200473, _))
-    ))
+        write_result,
+        Err(daqmx::error::DaqmxError::DaqmxError(-200288, _))
+    ), "{:?}", write_result);
 }
 
 #[test]
-fn test_voltage_input_builder() {
-    let ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai1")
+fn test_voltage_output_builder() {
+    let ch1 = VoltageOutputChannelBuilder::new("PXI1Slot2/ao1")
         .unwrap()
         .name("my name")
         .unwrap()
-        .scale(VoltageScale::Volts)
+        .scale(VoltageOutputScale::Volts)
         .max(10.0)
+        .min(-10.0);
 
-        .min(-10.0)
-        .terminal_config(AnalogTerminalConfig::RSE);
-
-    let mut task = Task::<AnalogInput>::new("").unwrap();
+    let mut task = Task::<AnalogOutput>::new("").unwrap();
     task.create_channel(ch1).unwrap();
 
     let configured: TaskChannel<Voltage> = task.get_channel("my name").unwrap();
     assert_eq!(
         configured.physical_channel().unwrap(),
-        "PXI1Slot2/ai1".to_owned()
+        "PXI1Slot2/ao1".to_owned()
     );
-    assert_eq!(configured.ai_max().unwrap(), 10.0);
-    assert_eq!(configured.ai_min().unwrap(), -10.0);
-    assert_eq!(
-        configured.terminal_config().unwrap(),
-        AnalogTerminalConfig::RSE
-    );
-    assert_eq!(configured.scale().unwrap(), VoltageScale::Volts);
+    assert_eq!(configured.ao_max().unwrap(), 10.0);
+    assert_eq!(configured.ao_min().unwrap(), -10.0);
+    assert_eq!(configured.scale().unwrap(), VoltageOutputScale::Volts);
 }
 
 #[test]
 fn test_voltage_input_builder_custom_scale() {
     //create custom scale first.
     let _scale = LinearScale::new("TestScale", 1.0, 0.0, PreScaledUnits::Volts, "test").unwrap();
-    let ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai1")
+    let ch1 = VoltageOutputChannelBuilder::new("PXI1Slot2/ao1")
         .unwrap()
         .name("my name")
         .unwrap()
-        .scale(VoltageScale::new_custom("TestScale").unwrap())
+        .scale(VoltageOutputScale::new_custom("TestScale").unwrap())
         .max(10.0)
-        .min(-10.0)
-        .terminal_config(AnalogTerminalConfig::RSE);
+        .min(-10.0);
 
-    let mut task = Task::<AnalogInput>::new("").unwrap();
+    let mut task = Task::<AnalogOutput>::new("").unwrap();
     task.create_channel(ch1).unwrap();
 
     let configured: TaskChannel<Voltage> = task.get_channel("my name").unwrap();
 
     assert_eq!(
         configured.scale().unwrap(),
-        VoltageScale::CustomScale(Some(Arc::new(
+        VoltageOutputScale::CustomScale(Some(Arc::new(
             CString::new("TestScale").expect("Name Error")
         )))
     );

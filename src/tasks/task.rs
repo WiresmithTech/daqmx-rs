@@ -25,6 +25,10 @@ impl Drop for TaskHandle {
 pub struct AnalogInput;
 
 #[derive(Clone)]
+///Marker type for an analog output task.
+pub struct AnalogOutput;
+
+#[derive(Clone)]
 pub struct Task<TYPE> {
     handle: Arc<TaskHandle>,
     channel_type: PhantomData<TYPE>,
@@ -160,6 +164,9 @@ impl<TYPE> Task<TYPE> {
         Ok(value != 0)
     }
 
+}
+
+impl Task<AnalogInput> {
     ///Sets whether DAQmx read automatically starts the task.
     pub fn set_read_auto_start(&mut self, value: bool) -> Result<()> {
         let value: bool32 = match value {
@@ -172,4 +179,5 @@ impl<TYPE> Task<TYPE> {
         ))?;
         Ok(())
     }
+    
 }

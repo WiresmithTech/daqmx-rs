@@ -1,7 +1,7 @@
 use crate::channels::ai_channels::temperature::{TemperatureInputKind, TemperatureUnits};
 use crate::channels::properties::{ChannelName, PropertyValue};
 use crate::channels::{AnalogInputKind, ChannelBuilder, ChannelKind, TaskChannel, property};
-use crate::daqmx_call;
+use crate::{ai_custom_scale, daqmx_call};
 use crate::error::DaqmxError;
 use ni_daqmx_sys::*;
 use std::ffi::CString;
@@ -215,3 +215,5 @@ impl ThermocoupleBuilder {
         Self { cjc_source, ..self }
     }
 }
+
+ai_custom_scale!(Thermocouple);

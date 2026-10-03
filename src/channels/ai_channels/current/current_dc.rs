@@ -3,7 +3,7 @@ use crate::channels::{
     AnalogInputKind, ChannelBuilder, ChannelKind,
     TaskChannel,
 };
-use crate::daqmx_call;
+use crate::{ai_custom_scale, daqmx_call};
 use crate::error::DaqmxError;
 use ni_daqmx_sys::*;
 use std::ffi::CString;
@@ -195,3 +195,5 @@ impl CurrentChannelBuilder {
         }
     }
 }
+
+ai_custom_scale!(CurrentChannel);

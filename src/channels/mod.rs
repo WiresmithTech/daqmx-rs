@@ -1,7 +1,10 @@
 pub mod ai_channels;
 mod properties;
+pub mod ao_channels;
+mod scales;
 
 pub use ai_channels::AnalogInputKind;
+pub use ao_channels::AnalogOutputKind;
 use ni_daqmx_sys::TaskHandle;
 use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
@@ -18,6 +21,7 @@ pub struct TaskChannel<K: ChannelKind> {
 }
 
 impl<K: ChannelKind> TaskChannel<K> {
+    property!(get_string physical_channel = ni_daqmx_sys::DAQmxGetPhysicalChanName);
     pub(crate) fn new(task: TaskHandle, name: CString) -> TaskChannel<K> {
         TaskChannel {
             task,

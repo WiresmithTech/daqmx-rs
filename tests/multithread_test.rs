@@ -8,7 +8,7 @@ use daqmx::types::*;
 
 #[test]
 fn test_move_to_thread() {
-    let mut task = Task::new("scalar").unwrap();
+    let mut task = Task::<AnalogInput>::new("scalar").unwrap();
     let ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai0").unwrap();
     task.create_channel(ch1).unwrap();
     task.configure_sample_clock_timing(
@@ -41,7 +41,7 @@ fn test_move_to_thread() {
 /// This test will move the read to another thread but set stop from this thread.
 /// This is a fairly commmon case for multithreading a task.
 fn test_control_from_thread() {
-    let mut task = Task::new("scalar").unwrap();
+    let mut task = Task::<AnalogInput>::new("scalar").unwrap();
     let ch1 = VoltageChannelBuilder::new("PXI1Slot2/ai0").unwrap();
     task.create_channel(ch1).unwrap();
     task.configure_sample_clock_timing(

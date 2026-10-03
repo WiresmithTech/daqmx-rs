@@ -7,12 +7,12 @@ use super::properties::PropertyValue;
 use super::{ChannelBuilder, ChannelKind, TaskChannel, property};
 use crate::error::{DaqmxError, Result};
 use ni_daqmx_sys::*;
-use std::ffi::CStr;
+use std::ffi::{c_char, CStr};
+use crate::channels::scales::CustomScaledChannel;
 
 pub trait AnalogInputKind: ChannelKind {}
 
 impl<K: AnalogInputKind> TaskChannel<K> {
-    property!(get_string physical_channel = ni_daqmx_sys::DAQmxGetPhysicalChanName);
     property!(get_set ai_max / set_ai_max: f64 = DAQmxGetAIMax, DAQmxSetAIMax);
     property!(get_set ai_min / set_ai_min: f64 = DAQmxGetAIMin, DAQmxSetAIMin);
     property!(get_set terminal_config / set_terminal_config:
@@ -28,15 +28,6 @@ impl<K: AnalogInputKind> TaskChannel<K> {
     property!(get raw_sample_size: u32 = DAQmxGetAIRawSampSize);
 
 
-    property!(get_string custom_scale_name = ni_daqmx_sys::DAQmxGetAICustomScaleName);
-
-    pub fn set_custom_scale_name(&self, name: &CStr) -> Result<()> {
-        self.property_set_raw(DAQmxSetAICustomScaleName, name.as_ptr())
-    }
-
-    pub fn reset_custom_scale_name(&self) -> Result<()> {
-        self.property_reset(DAQmxResetAICustomScaleName)
-    }
 }
 
 #[repr(i32)]
@@ -198,4 +189,21 @@ impl PropertyValue for AIResolutionUnits {
 pub trait AnalogChannelBuilder: ChannelBuilder {
     fn max(self, max: f64) -> Self;
     fn min(self, min: f64) -> Self;
+}
+
+/// A macro to add the custom scale options to an ao channel.
+///
+/// This is needed to avoid "diamond" dependencies in the type system.
+#[macro_export]
+macro_rules! ai_custom_scale {
+    ($channel_kind:ty) => {
+        use std::ffi::c_char;
+        use ni_daqmx_sys::{int32, uInt32, TaskHandle};
+        use crate::channels::scales::CustomScaledChannel;
+        impl CustomScaledChannel for $channel_kind {
+            const GET_NAME: unsafe extern "C" fn(TaskHandle, *const c_char, *mut c_char, uInt32) -> int32 = ni_daqmx_sys::DAQmxGetAICustomScaleName;
+            const SET_NAME: unsafe extern "C" fn(TaskHandle, *const c_char, *const c_char) -> int32 = ni_daqmx_sys::DAQmxSetAICustomScaleName;
+            const RESET_NAME: unsafe extern "C" fn(TaskHandle, *const c_char) -> int32 = ni_daqmx_sys::DAQmxResetAICustomScaleName;
+        }
+    };
 }

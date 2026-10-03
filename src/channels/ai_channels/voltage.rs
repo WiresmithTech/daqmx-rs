@@ -3,14 +3,11 @@ use crate::channels::{
     AnalogInputKind, ChannelBuilder, ChannelKind,
     TaskChannel,
 };
-use crate::daqmx_call;
+use crate::{ai_custom_scale, daqmx_call};
 use crate::error::DaqmxError;
 use crate::scales::PreScaledUnits;
-use ni_daqmx_sys::{
-    DAQmx_Val_FromCustomScale, DAQmx_Val_FromTEDS, DAQmx_Val_Volts, DAQmxGetAIVoltageUnits,
-    DAQmxSetAIVoltageUnits, TaskHandle,
-};
-use std::ffi::CString;
+use ni_daqmx_sys::{DAQmx_Val_FromCustomScale, DAQmx_Val_FromTEDS, DAQmx_Val_Volts, DAQmxGetAIVoltageUnits, DAQmxSetAIVoltageUnits};
+use std::ffi::{CString};
 use std::sync::Arc;
 use crate::channels::ai_channels::{AnalogChannelBuilder, AnalogTerminalConfig};
 
@@ -41,13 +38,14 @@ impl TaskChannel<Voltage> {
     }
 }
 
+/// The scale settings available for an input voltage.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum VoltageScale {
     Volts,
     /// A custom scale is in use. If we have not determined the name yet then this contains `None`.
     /// If we have determined the name, it will be contained in the option.
     CustomScale(Option<Arc<CString>>),
-    /// Units are set from the TEDS configuration. This cas should be read only.
+    /// Units are set from the TEDS configuration. This case should be read only.
     FromTEDS,
 }
 
@@ -158,3 +156,4 @@ impl VoltageChannelBuilder {
         }
     }
 }
+ai_custom_scale!(Voltage);
