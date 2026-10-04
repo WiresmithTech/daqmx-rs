@@ -4,7 +4,7 @@ version = "0.0.1"
 edition = "2024"
 license = "MIT"
 description = "NI DAQmx driver API"
-keywords = ["ni", "national instruments", "daq", "daqmx", "cdaq"]
+keywords = ["ni", "national-instruments", "daq", "daqmx", "cdaq"]
 categories = ["hardware-support"]
 repository = "https://github.com/WiresmithTech/daqmx-rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
